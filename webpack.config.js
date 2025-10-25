@@ -11,22 +11,32 @@ const paths = {
 };
 
 function common() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return {
-    mode: 'development',
-    devtool: 'cheap-module-source-map',
-    devServer: {
-      hot: true,
-      port: 8001,
-      https: true,
-      host: '0.0.0.0',
-      useLocalIp: true,
-      headers: {
-        'Cross-Origin-Opener-Policy': 'same-origin',
-        'Cross-Origin-Embedder-Policy': 'require-corp',
-      },
-    },
-    target: 'web',
+    mode: isProduction ? 'production' : 'development',
+    devtool: isProduction ? 'source-map' : 'cheap-module-source-map',
     entry: [paths.src],
+    output: {
+      path: paths.build,
+      filename: isProduction ? '[name].[contenthash].js' : '[name].js',
+      publicPath: '/',
+      clean: true,
+    },
+    ...(isProduction ? {} : {
+      devServer: {
+        hot: true,
+        port: 8001,
+        https: true,
+        host: '0.0.0.0',
+        useLocalIp: true,
+        headers: {
+          'Cross-Origin-Opener-Policy': 'same-origin',
+          'Cross-Origin-Embedder-Policy': 'require-corp',
+        },
+      },
+    }),
+    target: 'web',
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       modules: [paths.src, paths.node_modules],
@@ -58,7 +68,11 @@ function common() {
       ],
     },
     plugins: [
-      new HtmlWebpackPlugin({ template: paths.html, favicon: paths.icon }),
+      new HtmlWebpackPlugin({ 
+        template: paths.html, 
+        favicon: paths.icon,
+        inject: true,
+      }),
       new CopyPlugin({
         patterns: [
           {
