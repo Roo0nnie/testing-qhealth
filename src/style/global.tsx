@@ -1,7 +1,8 @@
-import { createGlobalStyle } from 'styled-components';
-import { Theme } from './theme';
+import React from "react";
+import { createGlobalStyle } from "styled-components";
+import { Theme } from "./theme";
 
-const GlobalStyle = createGlobalStyle<{ theme: Theme }>`
+const GlobalStyleInner = createGlobalStyle<{ theme: Theme }>`
   body {
     margin: 0;
     background: ${({ theme }) => theme.colors.background.primary};
@@ -9,7 +10,9 @@ const GlobalStyle = createGlobalStyle<{ theme: Theme }>`
     color: ${({ theme }) => theme.colors.text.primary};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color ${({ theme }) => theme.transitions.normal}, color ${({ theme }) => theme.transitions.normal};
+    transition: background-color ${({ theme }) =>
+      theme.transitions.normal}, color ${({ theme }) =>
+      theme.transitions.normal};
   }
 
   html, body, #root {
@@ -42,5 +45,7 @@ const GlobalStyle = createGlobalStyle<{ theme: Theme }>`
     margin: 0;
   }
 `;
+
+const GlobalStyle: React.FC = () => <GlobalStyleInner />;
 
 export default GlobalStyle;
