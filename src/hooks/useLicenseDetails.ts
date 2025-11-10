@@ -27,6 +27,10 @@ export const useLicenseKey = (): [string | null, (value: string | null) => void]
   // If env license key exists, use it; otherwise use localStorage
   const licenseKey = envLicenseKey || localStorageLicenseKey;
 
+  console.log('envLicenseKey', envLicenseKey);
+  console.log('localStorageLicenseKey', localStorageLicenseKey);
+  console.log('licenseKey', licenseKey);
+
   const setLicenseKey = (value: string | null) => {
     if (!envLicenseKey) {
       setLocalStorageLicenseKey(value);
