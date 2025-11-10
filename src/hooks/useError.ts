@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { getAlertDescription } from '../lib/alertUtils';
 
 const useError = (alert) => {
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -14,9 +15,10 @@ const useError = (alert) => {
     }
 
     if (alert?.code) {
-      displayError(`Error: ${alert.code}`);
+      const description = getAlertDescription(alert.code);
+      displayError(description || `Error: ${alert.code}`);
     }
-  }, [alert]);
+  }, [alert, displayError]);
 
   return errorMessage;
 };

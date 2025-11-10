@@ -133,6 +133,27 @@ const ButtonWrapper = styled(Flex)`
   `}
 `;
 
+const MobileResultsWrapper = styled(Flex)`
+  width: 100%;
+  flex-direction: column;
+  padding: 20px;
+  margin-top: 20px;
+  background-color: ${({ theme }) => {
+    const hex = theme.colors.background.secondary;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, 0.95)`;
+  }};
+  border-radius: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: none;
+  ${media.mobile`
+    display: flex;
+  `}
+`;
+
 const InfoBarWrapper = styled.div`
   height: 25px;
   width: 100%;
@@ -260,13 +281,22 @@ const BiosenseSignalMonitor = ({
       setIsMeasurementEnabled(false);
     }
     if (
+      sessionState === SessionState.TERMINATED &&
+      prevSessionState === SessionState.MEASURING &&
+      vitalSigns &&
+      !errorMessage
+    ) {
+      setIsMeasurementEnabled(true);
+      setIsLoading(false);
+    }
+    if (
       sessionState === SessionState.ACTIVE &&
       prevSessionState !== sessionState
     ) {
       setStartMeasuring(false);
       setIsLoading(false);
     }
-  }, [errorMessage, sessionState, isPageVisible]);
+  }, [errorMessage, sessionState, prevSessionState, isPageVisible, vitalSigns]);
 
   useEffect(() => {
     onLicenseStatus(!(error?.code in HealthMonitorCodes));
@@ -294,7 +324,7 @@ const BiosenseSignalMonitor = ({
             {(isMeasuring()
               ? !errorMessage && !warningMessage
               : !errorMessage) &&
-              isMeasurementEnabled && <Stats vitalSigns={vitalSigns} />}
+              isMeasurementEnabled && !mobile && vitalSigns && <Stats vitalSigns={vitalSigns} />}
             <ErrorAlert message={errorMessage} />
             {isMeasuring() && <WarningAlert message={warningMessage} />}
             {isMeasuring() && <InfoAlert message={info.message} />}
@@ -312,6 +342,11 @@ const BiosenseSignalMonitor = ({
                 onClick={handleButtonClick}
               />
             </ButtonWrapper>
+          )}
+          {mobile && vitalSigns && isMeasurementEnabled && (
+            <MobileResultsWrapper>
+              <Stats vitalSigns={vitalSigns} isMobile={true} />
+            </MobileResultsWrapper>
           )}
         </MeasurementContentWrapper>
       </MonitorWrapper>

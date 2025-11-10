@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { getAlertDescription } from '../lib/alertUtils';
 
 const useWarning = (alert) => {
   const [warningMessage, setWarningMessage] = useState<string>();
@@ -12,7 +13,7 @@ const useWarning = (alert) => {
   const displayWarning = useCallback((message: string) => {
     setWarningMessage(message);
     startDismissTimeout(4);
-  }, []);
+  }, [startDismissTimeout]);
 
   useEffect(() => {
     if (alert?.code === -1) {
@@ -21,9 +22,10 @@ const useWarning = (alert) => {
     }
 
     if (alert?.code) {
-      displayWarning(`Warning: ${alert.code}`);
+      const description = getAlertDescription(alert.code);
+      displayWarning(description || `Warning: ${alert.code}`);
     }
-  }, [alert]);
+  }, [alert, displayWarning]);
 
   return warningMessage;
 };
