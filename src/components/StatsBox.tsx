@@ -41,9 +41,11 @@ const StatsBox = ({ title, value }: any) => {
 	return (
 		<Box>
 			<Title>{title}</Title>
-			<ValueWrapper>{value && <Value>{value}</Value>}</ValueWrapper>
+			<ValueWrapper>
+				<Value>{value ?? '--'}</Value>
+			</ValueWrapper>
 		</Box>
-	)
-}
+	);
+};
 
 export default StatsBox

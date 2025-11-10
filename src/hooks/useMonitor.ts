@@ -48,7 +48,7 @@ const useMonitor = (
 				}
 			}
 		},
-		[InfoType, setInfo, info, isDismissing, isDismissing.current]
+		[]
 	)
 
 	const updateVitalSigns = useCallback(vitalSigns => {
@@ -59,13 +59,23 @@ const useMonitor = (
 	}, [])
 
 	const onVitalSign = useCallback((vitalSign: VitalSigns) => {
-		updateVitalSigns(vitalSign)
-	}, [])
+		// Log SDK structure to inspect available properties
+		if (vitalSign && Object.keys(vitalSign).length > 0) {
+			console.log('SDK VitalSigns object structure:', Object.keys(vitalSign));
+			console.log('SDK VitalSigns full object:', vitalSign);
+		}
+		updateVitalSigns(vitalSign);
+	}, [updateVitalSigns]);
 
 	const onFinalResults = useCallback((vitalSignsResults: VitalSignsResults) => {
-		setVitalSigns(null)
-		updateVitalSigns(vitalSignsResults.results)
-	}, [])
+		// Log final results structure to inspect all available properties
+		if (vitalSignsResults?.results) {
+			console.log('SDK Final Results structure:', Object.keys(vitalSignsResults.results));
+			console.log('SDK Final Results full object:', vitalSignsResults.results);
+		}
+		setVitalSigns(null);
+		updateVitalSigns(vitalSignsResults.results);
+	}, [updateVitalSigns]);
 
 	const onError = (errorData: AlertData) => {
 		setError(errorData)
@@ -207,39 +217,81 @@ const useMonitor = (
 		}
 	}, [startMeasuring])
 
+	// Helper function to safely extract value and enabled state
+	const getVitalSign = useCallback((
+		sdkProperty: string,
+		enabledProperty?: string,
+		defaultValue: any = null
+	) => {
+		const sdkVitalSigns = vitalSigns as any;
+		const vitalSignObj = sdkVitalSigns?.[sdkProperty];
+		const value = vitalSignObj?.value ?? defaultValue;
+		const confidenceLevel = vitalSignObj?.confidenceLevel;
+		const enabledVitalSignsObj = enabledVitalSigns as any;
+		const isEnabled = enabledProperty 
+			? enabledVitalSignsObj?.[enabledProperty] ?? false
+			: value !== null && value !== undefined;
+		
+		return { value, isEnabled, confidenceLevel };
+	}, [vitalSigns, enabledVitalSigns]);
+
 	return {
 		sessionState,
 		vitalSigns: {
-			pulseRate: {
-				value: vitalSigns?.pulseRate?.value,
-				isEnabled: enabledVitalSigns?.isEnabledPulseRate ?? false,
-			},
-			respirationRate: {
-				value: vitalSigns?.respirationRate?.value,
-				isEnabled: enabledVitalSigns?.isEnabledRespirationRate ?? false,
-			},
-			stress: {
-				value: vitalSigns?.stressLevel?.value,
-				isEnabled: enabledVitalSigns?.isEnabledStressLevel ?? false,
-			},
-			hrvSdnn: {
-				value: vitalSigns?.sdnn?.value,
-				isEnabled: enabledVitalSigns?.isEnabledSdnn ?? false,
-			},
-			spo2: {
-				value: null, //TODO Spo2 is currently disabled by algo
-				isEnabled: false, //enabledVitalSigns?.isEnabledSpo2,
-			},
+			// Basic Vital Signs
+			pulseRate: getVitalSign('pulseRate', 'isEnabledPulseRate'),
+			respirationRate: getVitalSign('respirationRate', 'isEnabledRespirationRate'),
+			spo2: getVitalSign('spo2', 'isEnabledSpo2', null),
 			bloodPressure: {
-				value: vitalSigns?.bloodPressure?.value,
+				value: vitalSigns?.bloodPressure?.value ?? null,
 				isEnabled: enabledVitalSigns?.isEnabledBloodPressure ?? false,
 			},
+			
+			// HRV Metrics
+			sdnn: getVitalSign('sdnn', 'isEnabledSdnn'),
+			rmssd: getVitalSign('rmssd', 'isEnabledRmssd'),
+			sd1: getVitalSign('sd1', 'isEnabledSd1'),
+			sd2: getVitalSign('sd2', 'isEnabledSd2'),
+			meanRri: getVitalSign('meanRri', 'isEnabledMeanRri'),
+			rri: getVitalSign('rri', 'isEnabledRri'),
+			lfhf: getVitalSign('lfhf', 'isEnabledLfhf'), // SDK uses 'lfhf' not 'lfHfRatio'
+			
+			// Stress & Wellness
+			stressLevel: getVitalSign('stressLevel', 'isEnabledStressLevel'),
+			stressIndex: getVitalSign('stressIndex', 'isEnabledStressIndex'),
+			normalizedStressIndex: getVitalSign('normalizedStressIndex', 'isEnabledNormalizedStressIndex'),
+			wellnessIndex: getVitalSign('wellnessIndex', 'isEnabledWellnessIndex'),
+			wellnessLevel: getVitalSign('wellnessLevel', 'isEnabledWellnessLevel'),
+			
+			// Nervous System
+			snsIndex: getVitalSign('snsIndex', 'isEnabledSnsIndex'),
+			snsZone: getVitalSign('snsZone', 'isEnabledSnsZone'),
+			pnsIndex: getVitalSign('pnsIndex', 'isEnabledPnsIndex'),
+			pnsZone: getVitalSign('pnsZone', 'isEnabledPnsZone'),
+			
+			// Other Metrics
+			prq: getVitalSign('prq', 'isEnabledPrq'),
+			heartAge: getVitalSign('heartAge', 'isEnabledHeartAge'),
+			hemoglobin: getVitalSign('hemoglobin', 'isEnabledHemoglobin'),
+			hemoglobinA1c: getVitalSign('hemoglobinA1c', 'isEnabledHemoglobinA1c'),
+			cardiacWorkload: getVitalSign('cardiacWorkload', 'isEnabledCardiacWorkload'),
+			meanArterialPressure: getVitalSign('meanArterialPressure', 'isEnabledMeanArterialPressure'),
+			pulsePressure: getVitalSign('pulsePressure', 'isEnabledPulsePressure'),
+			
+			// Risk Indicators
+			ascvdRisk: getVitalSign('ascvdRisk', 'isEnabledAscvdRisk'),
+			ascvdRiskLevel: getVitalSign('ascvdRiskLevel', 'isEnabledAscvdRiskLevel'),
+			highBloodPressureRisk: getVitalSign('highBloodPressureRisk', 'isEnabledHighBloodPressureRisk'),
+			highFastingGlucoseRisk: getVitalSign('highFastingGlucoseRisk', 'isEnabledHighFastingGlucoseRisk'),
+			highHemoglobinA1CRisk: getVitalSign('highHemoglobinA1CRisk', 'isEnabledHighHemoglobinA1CRisk'), // SDK uses 'highHemoglobinA1CRisk'
+			highTotalCholesterolRisk: getVitalSign('highTotalCholesterolRisk', 'isEnabledHighTotalCholesterolRisk'),
+			lowHemoglobinRisk: getVitalSign('lowHemoglobinRisk', 'isEnabledLowHemoglobinRisk'),
 		},
 		offlineMeasurements,
 		error,
 		warning,
 		info,
-	}
+	};
 }
 
 export default useMonitor

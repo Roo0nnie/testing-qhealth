@@ -1,0 +1,308 @@
+{
+  "4": {
+    "name": "deviceCodeLowPowerModeEnabledError",
+    "cause": "A session was requested to run while the device is in 'Low Power' mode.",
+    "solution": "The user should open the device settings and turn off 'Low Power Mode' or charge your device until the 'Low Power Mode' turns off."
+  },
+  "8": {
+    "name": "deviceCodeMinimumOsVersionError",
+    "cause": "The device's operating system version is lower than the minimum version required to run the SDK.",
+    "solution": "Upgrade the device operating system or use another device."
+  },
+  "14": {
+    "name": "deviceCodeMinimumBatteryLevelError",
+    "cause": "The battery level is below 20% and prevents accurate measurement.",
+    "solution": "The user should connect the device to a charger and wait until battery is sufficiently charged."
+  },
+  "17": {
+    "name": "deviceCodeClockSkewError",
+    "cause": "Severe clock skew detected",
+    "solution": "The user should verify that the device date, time, and timezone are set correctly. It is recommended to set the date and time automatically in the device settings."
+  },
+  "19": {
+    "name": "deviceBluetoothIsOffError",
+    "cause": "The Bluetooth is off.",
+    "solution": "Instruct the user to turn on Bluetooth."
+  },
+  "20": {
+    "name": "deviceBluetoothMissingPermissionsError",
+    "cause": "The application does not have Bluetooth permissions.",
+    "solution": "Instruct the user to grant the application permissions to use the Bluetooth."
+  },
+  "21": {
+    "name": "deviceLocationIsOffError",
+    "cause": "The device location service is off.",
+    "solution": "Instruct the user to turn on the device location service in the device settings."
+  },
+  "1001": {
+    "name": "cameraCodeNoCameraError",
+    "cause": "The session.start() command was called, but the device has no camera with the required specifications.",
+    "solution": "The camera must support a resolution of 640x480 at 30FPS. The user should verify that the device camera works properly."
+  },
+  "1002": {
+    "name": "cameraCodeCameraOpenError",
+    "cause": "Could not operate the camera.",
+    "solution": "The user should verify that the device camera works properly and try again. If the problem persists, the user should restart the application."
+  },
+  "1005": {
+    "name": "cameraCodeCameraMissingPermissionsError",
+    "cause": "The application does not have permission to access the camera.",
+    "solution": "The user should access the device settings and grant the application permission to use the camera."
+  },
+  "1501": {
+    "name": "cameraCodeUnexpectedImageDimensionsWarning",
+    "cause": "The images received from the camera have a different resolution than the requested resolution.",
+    "solution": "Instruct the user to retry taking the measurements. If the problem persists, then the device is probably malfunctioning, or does not support VGA resolution. The user should be instructed to use a different device. Although this is just a \"warning\" alert, and the measurement continues, the accuracy of the measurement may be impacted by the unexpected resolution."
+  },
+  "2002": {
+    "name": "licenseCodeActivationLimitReachedError",
+    "cause": "No more devices can be used with your license",
+    "solution": "Contact the sales team to increase the number of device authorizations in your license."
+  },
+  "2003": {
+    "name": "licenseCodeMeterAttributeUsesLimitReachedError",
+    "cause": "No more measurements are allowed for the provided license. (Relevant only for customers with a 'per session' license).",
+    "solution": "Contact the sales team to increase the number of measurements in your license."
+  },
+  "2004": {
+    "name": "licenseCodeAuthenticationFailedError",
+    "cause": "Several issues might cause this error: clock skew detected, the SDK was unable to authenticate the license, a bad token was received from the license server",
+    "solution": "The user should take the following actions: Check the internet connection. Set the device time correctly. Verify that the device has sufficient storage."
+  },
+  "2007": {
+    "name": "licenseCodeInvalidLicenseKeyError",
+    "cause": "The provided license key is invalid.",
+    "solution": "Use the license key provided by the support team. If the problem persists, contact the support team."
+  },
+  "2010": {
+    "name": "licenseCodeRevokedLicenseError",
+    "cause": "The license was revoked.",
+    "solution": "Contact the customer support team."
+  },
+  "2016": {
+    "name": "licenseCodeInternalError9",
+    "cause": "SSL error. Unable to authenticate the license server response.",
+    "solution": "The user should check the device's local time, internet connection, try a different network, or try again later."
+  },
+  "2017": {
+    "name": "licenseCodeLicenseExpiredError",
+    "cause": "The license has expired.",
+    "solution": "Contact the customer support team."
+  },
+  "2018": {
+    "name": "licenseCodeLicenseSuspendedError",
+    "cause": "The license is suspended.",
+    "solution": "Contact the customer support team."
+  },
+  "2024": {
+    "name": "licenseCodeNetworkIssuesError",
+    "cause": "No internet connection.",
+    "solution": "Check your internet connection and The user should check the internet connection and try again. again"
+  },
+  "2025": {
+    "name": "licenseCodeSslHandshakeError",
+    "cause": "SSL certificate security warning.",
+    "solution": "The user should check the device's local time, internet connection, try a different network, or try again later."
+  },
+  "2032": {
+    "name": "licenseCodeInputLicenseKeyEmptyError",
+    "cause": "No license key was provided to the SDK.",
+    "solution": "Initiate the SDK with a valid license key, provided by the support team."
+  },
+  "2034": {
+    "name": "licenseCodeInputProductIdIllegalError",
+    "cause": "An invalid product ID was provided.",
+    "solution": "The product ID must be null when establishing a session."
+  },
+  "2035": {
+    "name": "licenseCodeCannotOpenFileForReadError",
+    "cause": "The SDK cannot read from the file system, or a file may be corrupted.",
+    "solution": "Instruct the user to check the installation integrity."
+  },
+  "2036": {
+    "name": "licenseCodeMonthlyUsageTrackingRequiresSyncError",
+    "cause": "The SDK failed to authenticate with the license server as required by the license type.",
+    "solution": "Instruct the user to check the internet connection and try again."
+  },
+  "2037": {
+    "name": "licenseCodeSslHandshakeDeviceDateError",
+    "cause": "SSL certificate security warning.",
+    "solution": "The user should check the device's local time, internet connection, try a different network, or try again later."
+  },
+  "2038": {
+    "name": "licenseCodeSslHandshakeCertificateExpiredError",
+    "cause": "SSL certificate security warning.",
+    "solution": "The user should check the device's local time, internet connection, try a different network, or try again later."
+  },
+  "2039": {
+    "name": "licenseCodeMinSdkError",
+    "cause": "The SDK version is too old to be used with this license.",
+    "solution": "Upgrade to the latest SDK version or contact the support team."
+  },
+  "2042": {
+    "name": "licenseCodeNetworkTimeoutError",
+    "cause": "Network timeout reached for a single call",
+    "solution": "Advise the user to try the following steps: verify the internet connection speed, restart the application, wait briefly, attempt using another network, or try again later. If the issue persists, please contact our support team."
+  },
+  "2049": {
+    "name": "licenseCodeMonitoringDisabledError",
+    "cause": "This license does not include entitlement for fall detection using.",
+    "solution": "Contact the sales team to enable fall detection on your license."
+  },
+  "3003": {
+    "name": "measurementCodeMisdetectionDurationExceedsLimitError",
+    "cause": "The face was not detected for a period of over 0.5 seconds several times.",
+    "solution": "The user should ensure that the face remains still during the measurement and follow the best practices provided by the provider for taking accurate measurements."
+  },
+  "3004": {
+    "name": "measurementCodeInvalidRecentDetectionRateError",
+    "cause": "More than two periods of multiple frame losses were detected during the measurement. This issue may occur if the device is overloaded and unable to process video frames in real-time.",
+    "solution": "For the User: Ensure the device is not overloaded, overheated, or running low on resources. If the problem persists, close other applications or services, or restart the device. ollow best practices for taking a measurement and provide guidance on optimizing device performance. For the Application Developer: Avoid using debugging or developer tools or performing intensive logging during the measurement."
+  },
+  "3006": {
+    "name": "measurementCodeLicenseActivationFailedError",
+    "cause": "The license activation failed.",
+    "solution": "The user should check the device's internet connection, and should check that no invalid proxy configuration is used. If the problem persists, the user should contact the support team."
+  },
+  "3008": {
+    "name": "measurementCodeInvalidMeasurementAverageDetectionRateError",
+    "cause": "The average frame rate is significantly lower than expected. This issue may result from device overloading.",
+    "solution": "For the User: Close resource-intensive applications to free up device resources. Ensure the device is not busy, overheated, or overloaded. Allow the device to cool down and retry the measurement. If the problem persists, consider using another device. For the Application Developer: Verify that the SDK implementation does not impose excessive demands on the device. Provide users with clear instructions to optimize their device performance and follow best practices for taking a measurement. Ensure your application minimizes background activity during SDK operations."
+  },
+  "3009": {
+    "name": "measurementCodeTooManyFramesInorderError",
+    "cause": "Multiple consecutive frames were received in incorrect timestamp order. This error occurs if warning 3506 is issued multiple times.",
+    "solution": "The user should rerun the measurement."
+  },
+  "3500": {
+    "name": "measurementCodeMisdetectionDurationExceedsLimitWarning",
+    "cause": "A face was not detected for a period of over 0.5 seconds.",
+    "solution": "The instantaneous vital signs should not be displayed to the user for a few seconds until the algorithms overcome the detection issues. The user must follow the best practices for taking a measurement."
+  },
+  "3505": {
+    "name": "measurementCodeInvalidRecentFpsRateWarning",
+    "cause": "Camera FPS is degraded and may affect the measurement quality.",
+    "solution": "The user should make sure to follow the best practices for taking a measurement."
+  },
+  "3506": {
+    "name": "measurementCodeMeasurementMisplacedFrameWarning",
+    "cause": "A frame was received in incorrect timestamp order.",
+    "solution": "The user should proceed with the measurement."
+  },
+  "4505": {
+    "name": "vitalSignCodeBloodPressureProcessingFailedWarning",
+    "cause": "Failure to calculate blood pressure in this measurement. This warning does not impact other vital sign measurements. The failure may have been caused by corrupted installation files.",
+    "solution": "Blood pressure will not be calculated for this measurement session. The other vital sign results will be presented. The user can retry the measurement. If the problem persists, the user should reinstall/repair the app."
+  },
+  "4506": {
+    "name": "vitalSignCodeMeasuringWithNoEnabledVitalSignsWarning",
+    "cause": "No vital signs were processed as part of this measurement.",
+    "solution": "This warning is issued when the license does not support the calculation of any vital signs, or when the SDK cannot access license information. The user should check the internet connection and try another measurement."
+  },
+  "6004": {
+    "name": "sessionCodeIllegalStartCallError",
+    "cause": "A session start call was made when the session is not in READY state",
+    "solution": "Wait for session state to become READY before calling start."
+  },
+  "6005": {
+    "name": "sessionCodeIllegalStopCallError",
+    "cause": "A session stop call was made when the session is not in PROCESSING state",
+    "solution": "Call stop only when session is processing."
+  },
+  "7002": {
+    "name": "initializationCodeInvalidProcessingTimeError",
+    "cause": "An invalid session time was provided when creating a session.",
+    "solution": "Use a valid session time. The valid session time range is between 20-180 seconds."
+  },
+  "7004": {
+    "name": "initializationCodeRotationAndOrientationMismatch",
+    "cause": "Both the withImageRotation and withDeviceOrientation properties were used when creating a session.",
+    "solution": "The use of both the withImageRotation and withDeviceOrientation properties are not supported when creating a session. Use only the withDeviceOrientation property."
+  },
+  "7005": {
+    "name": "initializationCodeInvalidLicenseFormat",
+    "cause": "The provided license key is either empty or its format is invalid.",
+    "solution": "Check the SDK license key provided by the support team. Ensure it is not empty and follows a valid format - avoid including spaces, newlines, or special characters."
+  },
+  "7006": {
+    "name": "initializationCodeSdkLoadFailure",
+    "cause": "The SDK failed to initialize, probably due to unsupported hardware.",
+    "solution": "The user should verify that the device chipset is 64 bits, and that the Android OS is 64 bits. If the problem persists, contact the support team and specify the exact device model used."
+  },
+  "7007": {
+    "name": "initializationCodeUnsupportedUserWeight",
+    "cause": "The weight submitted by the user is not supported. The supported weight range is between 40 to 200 kilograms.",
+    "solution": "The user should either submit a weight within the supported range, or not specify a weight at all."
+  },
+  "7008": {
+    "name": "initializationCodeUnsupportedUserAge",
+    "cause": "The age submitted by the user is not supported. The supported age range is between 18 to 110 years.",
+    "solution": "The user should either submit an age within the supported range or not specify an age at all."
+  },
+  "7009": {
+    "name": "initializationCodeConcurrentSessionsError",
+    "cause": "Trying to create a new session before terminating the previous session.",
+    "solution": "The previous session should be terminated before establishing a new one."
+  },
+  "7010": {
+    "name": "initializationMissingPolarDependenciesError",
+    "cause": "The Polar SDK is missing as a dependency in the application's build.gradle file.",
+    "solution": "Edit the application's build.gradle file to include Polar SDK as a dependency. Please refer to the documentation for additional information."
+  },
+  "7011": {
+    "name": "initializationMissingAnalyticsDependenciesError",
+    "cause": "The application instructed to use the analytics feature within the SDK, but the Segment Anlytics-Kotlin dependency is not included in the application's build.gradle file.",
+    "solution": "Edit the application's build.gradle file to include Segment Anlytics-Kotlin as a dependency."
+  },
+  "7012": {
+    "name": "initializationCodeUnsupportedUserHeight",
+    "cause": "The height submitted by the user is not supported. The supported height range is between 130 to 230 centimeters.",
+    "solution": "The application should specify a height value within the supported range or not specify a height at all."
+  },
+  "8003": {
+    "name": "ppgDeviceConnectionTimeoutError",
+    "cause": "It took too long to the Bluetooth device to respond to the connection request.",
+    "solution": "Instruct the user to turn off the bluetooth device and after a while turn it back on and try again to connect."
+  },
+  "8004": {
+    "name": "ppgDeviceInvalidDeviceIdError",
+    "cause": "The requested ID of the Bluetooth device has an invalid format.",
+    "solution": "Make sure to provide a valid Bluetooth device ID."
+  },
+  "8005": {
+    "name": "ppgDeviceUnsupportedFirmwareVersionError",
+    "cause": "The Bluetooth device firmware version is not supported.",
+    "solution": "Upgrade the Bluetooth device firmware or try another device."
+  },
+  "8006": {
+    "name": "ppgDeviceUnsupportedDeviceModelError",
+    "cause": "The Bluetooth device hardware is not supported.",
+    "solution": "Instruct the user to use another Bluetooth device."
+  },
+  "8007": {
+    "name": "ppgDeviceConnectionError",
+    "cause": "The Bluetooth device was disconnected.",
+    "solution": "Instruct the user to check the Bluetooth device battery, turn the Bluetooth off and back on and to try connecting again."
+  },
+  "8008": {
+    "name": "ppgDeviceMisplacementError",
+    "cause": "The sensor is misplaced, removed, or not fastened to the skin.",
+    "solution": "Instruct the user to wear the PPG device snugly over a clean area of skin on their non-dominant upper arm. Ensure direct contact with the skin (underneath clothing) and avoid placing it over tattoos. If issues persist, clean the device and the skin area, and fasten the band securely."
+  },
+  "8501": {
+    "name": "ppgDeviceNotOnBodyWarning",
+    "cause": "The PPG Device is not fastened to the user's arm.",
+    "solution": "Instruct the user to fasten the PPG device strap to the arm"
+  },
+  "9001": {
+    "name": "monitoringStoppedError",
+    "cause": "Monitoring of fall detection temporarily stopped for this session.",
+    "solution": "You can continue measuring vital signs within this session unless another error is reported concurrently. To resume fall detection monitoring, terminate this session and create a new session with the relevant configuration. Make sure no other monitoring errors are reported during this process."
+  },
+  "9500": {
+    "name": "monitoringDataGapExceedsLimitWarning",
+    "cause": "Some data was dropped in the stream from the PPG Device, potentially hindering the SDK's ability to accurately monitor the user.",
+    "solution": "The SDK will automatically address this issue, and fall detection monitoring will resume within approximately 6 seconds. However, if this problem persists, it may be due to an unstable Bluetooth connection. We advise instructing the user to move closer to the mobile phone to enhance communication with the external PPG device."
+  }
+}
+
