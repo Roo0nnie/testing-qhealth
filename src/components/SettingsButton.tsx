@@ -1,24 +1,23 @@
-import settings from '../assets/settings-hamburger.svg';
-import React from 'react';
-import styled from 'styled-components';
+import React from "react"
+import styled from "styled-components"
+
+import settings from "../assets/settings-hamburger.svg"
 
 const Img = styled.img<{ disable: boolean }>`
-  height: 17px;
-  width: 22px;
-  margin: 0 8px;
-  padding: 13px;
-  visibility: ${({ disable }) => disable && 'hidden'};
-`;
+	height: 17px;
+	width: 22px;
+	margin: 0 8px;
+	padding: 13px;
+	visibility: ${({ disable }) => disable && "hidden"};
+`
 
-const SettingsButton = ({ onClick, disable }) => {
-  return (
-    <Img
-      id="settingsButton"
-      disable={disable}
-      src={settings}
-      onClick={onClick}
-    />
-  );
-};
+interface SettingsButtonProps {
+	onClick: () => void
+	disable: boolean
+}
 
-export default SettingsButton;
+const SettingsButton = ({ onClick, disable }: SettingsButtonProps) => {
+	return <Img id="settingsButton" disable={disable} src={settings} onClick={onClick} />
+}
+
+export default SettingsButton

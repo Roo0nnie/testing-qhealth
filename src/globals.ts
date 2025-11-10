@@ -1,4 +1,2 @@
-declare module '*.svg' {
-  const content: any;
-  export default content;
-}
+// SVG module declarations moved to custom.d.ts
+export {}

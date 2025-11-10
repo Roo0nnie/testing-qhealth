@@ -1,5 +1,5 @@
-import ErrorAlert from './ErrorAlert';
-import WarningAlert from './WarningAlert';
-import InfoAlert from './InfoAlert';
+import ErrorAlert from "./ErrorAlert"
+import InfoAlert from "./InfoAlert"
+import WarningAlert from "./WarningAlert"
 
-export { ErrorAlert, WarningAlert, InfoAlert };
+export { ErrorAlert, WarningAlert, InfoAlert }
