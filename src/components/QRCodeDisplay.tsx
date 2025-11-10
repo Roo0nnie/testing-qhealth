@@ -14,9 +14,11 @@ const Container = styled(Flex)`
 
 const QRCodeWrapper = styled.div`
   padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  box-shadow: ${({ theme }) => theme.shadows.md};
+  transition: background-color ${({ theme }) => theme.transitions.normal},
+    box-shadow ${({ theme }) => theme.transitions.normal};
 `;
 
 const Instructions = styled.div`
@@ -28,22 +30,25 @@ const Title = styled.h2`
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 16px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text.primary};
+  transition: color ${({ theme }) => theme.transitions.normal};
 `;
 
 const Description = styled.p`
   font-size: 16px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.text.secondary};
   line-height: 1.5;
   margin-bottom: 12px;
+  transition: color ${({ theme }) => theme.transitions.normal};
 `;
 
 const SessionIdText = styled.div`
   font-size: 12px;
-  color: #999;
+  color: ${({ theme }) => theme.colors.text.tertiary};
   font-family: monospace;
   margin-top: 12px;
   word-break: break-all;
+  transition: color ${({ theme }) => theme.transitions.normal};
 `;
 
 interface QRCodeDisplayProps {

@@ -15,16 +15,18 @@ const Title = styled.div`
   justify-content: center;
   text-align: center;
   align-items: center;
-  color: #01061b;
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 16px;
+  transition: color ${({ theme }) => theme.transitions.normal};
 `;
 
 const Value = styled.div`
   font-size: 14px;
-  color: #01061b;
+  color: ${({ theme }) => theme.colors.primary.main};
   font-weight: 700;
+  transition: color ${({ theme }) => theme.transitions.normal};
 `;
 
 const ValueWrapper = styled.div`

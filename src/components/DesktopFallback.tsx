@@ -13,6 +13,8 @@ const Container = styled(Flex)`
   height: 100%;
   min-height: 100vh;
   padding: 40px 20px;
+  background: ${({ theme }) => theme.colors.background.primary};
+  transition: background-color ${({ theme }) => theme.transitions.normal};
 `;
 
 interface DesktopFallbackProps {
@@ -47,11 +49,11 @@ const DesktopFallback: React.FC<DesktopFallbackProps> = ({ sessionId }) => {
   return (
     <Container>
       <QRCodeDisplay sessionId={sessionId} />
-      {isPolling && (
+      {/* {isPolling && (
         <div style={{ marginTop: '20px', textAlign: 'center', color: '#666' }}>
           Waiting for measurement results...
         </div>
-      )}
+      )} */}
       {error && (
         <div
           style={{
@@ -59,9 +61,10 @@ const DesktopFallback: React.FC<DesktopFallbackProps> = ({ sessionId }) => {
             padding: '12px 24px',
             backgroundColor: '#fee',
             border: '1px solid #fcc',
-            borderRadius: '8px',
+            borderRadius: '12px',
             color: '#c33',
             maxWidth: '500px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
           }}
         >
           {error}

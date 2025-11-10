@@ -17,34 +17,31 @@ import { useMediaPredicate } from 'react-media-hook';
 import {
   useError,
   useLicenseKey,
-  useMeasurementDuration,
   useMonitor,
   usePageVisibility,
   usePrevious,
   useWarning,
 } from '../hooks';
+import { DEFAULT_MEASUREMENT_DURATION } from '../hooks/useLicenseDetails';
 import Stats from './Stats';
 import StartButton from './StartButton';
 import { mirror } from '../style/mirror';
 import { Flex } from './shared/Flex';
-import Timer from './Timer';
 import media from '../style/media';
-import InfoBar from './InfoBar';
 import { ErrorAlert, InfoAlert, WarningAlert } from './alert';
-import Loader from './Loader';
+// import Loader from './Loader';
 import { VideoReadyState } from '../types';
 import TopBar from './TopBar';
 import Mask from '../assets/mask.svg';
 import { storeResults } from '../services/api';
-import { InfoType } from '../types';
+import { Spinner } from './ui/spinner';
 
-const MonitorWrapper = styled(Flex)<{ isSettingsOpen: boolean }>`
+const MonitorWrapper = styled(Flex)`
   flex-direction: column;
   width: 100%;
   justify-content: start;
   align-items: center;
   flex: 1;
-  z-index: ${({ isSettingsOpen }) => isSettingsOpen && '-1'};
   ${media.tablet`
     width: fit-content;
     justify-content: center;
@@ -82,19 +79,36 @@ const VideoWrapper = styled.div`
   z-index: -1;
 `;
 
-const Img = styled.img<{ isDesktop: boolean }>`
+const Img = styled.img<{ isDesktop: boolean; isReady: boolean }>`
   position: absolute;
   width: 100%;
   height: 100%;
   z-index: 1;
   object-fit: ${({ isDesktop }) => (isDesktop ? 'contain' : 'cover')};
+  opacity: ${({ isReady }) => (isReady ? 1 : 0)};
+  transition: opacity 0.3s ease-in-out;
 `;
 
-const Video = styled.video`
+const Video = styled.video<{ isReady: boolean }>`
   width: 100%;
   height: 100%;
   object-fit: cover;
   ${mirror};
+  background-color: ${({ theme }) => theme.colors.background.primary};
+  opacity: ${({ isReady }) => (isReady ? 1 : 0)};
+  transition: opacity 0.3s ease-in-out;
+`;
+
+const LoadingOverlay = styled(Flex)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  background-color: ${({ theme }) => theme.colors.background.primary};
 `;
 
 const ButtonWrapper = styled(Flex)`
@@ -116,17 +130,6 @@ const ButtonWrapper = styled(Flex)`
   right: 0;
   bottom: 42%;
   margin-right: 60px;
-`}
-`;
-
-const ButtomTimerWrapper = styled(Flex)`
-  display: none;
-  ${media.tablet`
-    justify-content: center;
-    align-items: center;
-    margin-top: 10px;
-    height: 30px;
-    display: flex;
   `}
 `;
 
@@ -144,8 +147,6 @@ const BiosenseSignalMonitor = ({
   showMonitor,
   cameraId,
   onLicenseStatus,
-  onSettingsClick,
-  isSettingsOpen,
   sessionId,
 }) => {
   if (!showMonitor) {
@@ -161,7 +162,7 @@ const BiosenseSignalMonitor = ({
   const [loadingTimeoutPromise, setLoadingTimeoutPromise] = useState<number>();
   const isPageVisible = usePageVisibility();
   const isMediaTablet = useMediaPredicate('(min-width: 1000px)');
-  const [processingTime] = useMeasurementDuration();
+  const processingTime = DEFAULT_MEASUREMENT_DURATION;
   const [licenseKey] = useLicenseKey();
   const {
     sessionState,
@@ -209,12 +210,6 @@ const BiosenseSignalMonitor = ({
   // Send results to API when measurement completes on mobile with session ID
   useEffect(() => {
     const sendResultsToAPI = async () => {
-      // Only send if:
-      // 1. We're on mobile (isMobile() check)
-      // 2. Session ID exists
-      // 3. Measurement just completed (state changed from MEASURING to TERMINATED)
-      // 4. We have vital signs data
-      // 5. We haven't already sent results
       if (
         !isMobile() ||
         !sessionId ||
@@ -282,21 +277,19 @@ const BiosenseSignalMonitor = ({
 
   return (
     <>
-      <TopBar onSettingsClick={onSettingsClick} isMeasuring={isMeasuring()} />
-      <MonitorWrapper isSettingsOpen={isSettingsOpen}>
+      <TopBar isMeasuring={isMeasuring()} durationSeconds={processingTime} />
+      <MonitorWrapper>
         <MeasurementContentWrapper isMobile={mobile}>
-          <InfoBarWrapper>
-            <InfoBar
-              showTimer={isMeasurementEnabled && !isMediaTablet}
-              isMeasuring={isMeasuring()}
-              durationSeconds={processingTime}
-              offlineMeasurements={offlineMeasurements}
-            />
-          </InfoBarWrapper>
           <VideoAndStatsWrapper isMobile={mobile}>
             <VideoWrapper>
-              <Img src={Mask} isDesktop={desktop} />
-              <Video ref={video} id="video" muted={true} playsInline={true} />
+              <Img src={Mask} isDesktop={desktop} isReady={isVideoReady()} />
+              <Video 
+                ref={video} 
+                id="video" 
+                muted={true} 
+                playsInline={true}
+                isReady={isVideoReady()}
+              />
             </VideoWrapper>
             {(isMeasuring()
               ? !errorMessage && !warningMessage
@@ -305,20 +298,21 @@ const BiosenseSignalMonitor = ({
             <ErrorAlert message={errorMessage} />
             {isMeasuring() && <WarningAlert message={warningMessage} />}
             {isMeasuring() && <InfoAlert message={info.message} />}
-            {!isVideoReady() && licenseKey && <Loader />}
-          </VideoAndStatsWrapper>
-          <ButtomTimerWrapper>
-            {isMeasurementEnabled && (
-              <Timer started={isMeasuring()} durationSeconds={processingTime} />
+            {!isVideoReady() && licenseKey && (
+              <LoadingOverlay>
+                <Spinner size={48} />
+              </LoadingOverlay>
             )}
-          </ButtomTimerWrapper>
-          <ButtonWrapper>
-            <StartButton
-              isLoading={isLoading}
-              isMeasuring={isMeasuring()}
-              onClick={handleButtonClick}
-            />
-          </ButtonWrapper>
+          </VideoAndStatsWrapper>
+          {isVideoReady() && (
+            <ButtonWrapper>
+              <StartButton
+                isLoading={isLoading}
+                isMeasuring={isMeasuring()}
+                onClick={handleButtonClick}
+              />
+            </ButtonWrapper>
+          )}
         </MeasurementContentWrapper>
       </MonitorWrapper>
     </>
