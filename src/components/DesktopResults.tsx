@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import Stats from './Stats';
 import { MeasurementResults, VitalSigns } from '../types';
 import { Flex } from './shared/Flex';
-import Loader from './Loader';
+import { Spinner } from './ui/spinner';
 
 const Container = styled(Flex)`
   flex-direction: column;
@@ -50,9 +50,10 @@ const ErrorMessage = styled.div`
   padding: 20px;
   background-color: #fee;
   border: 1px solid #fcc;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #c33;
   max-width: 500px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 `;
 
 const LoadingMessage = styled.div`
@@ -92,7 +93,7 @@ const DesktopResults: React.FC<DesktopResultsProps> = ({
     return (
       <Container>
         <LoadingMessage>
-          <Loader />
+          <Spinner size={32} />
           <p style={{ marginTop: '16px' }}>
             Waiting for measurement results...
             <br />

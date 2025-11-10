@@ -11,11 +11,19 @@ const Wrapper = styled(Flex)`
   align-items: center;
   justify-content: center;
   height: 80px;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: ${({ theme }) => {
+    // Convert hex to rgba with 0.95 opacity
+    const hex = theme.colors.background.secondary;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, 0.95)`;
+  }};
   border-radius: 3px;
   padding: 13px 50px;
   bottom: 30px;
   box-sizing: border-box;
+  transition: background-color ${({ theme }) => theme.transitions.normal};
 `;
 
 const BoxesWrapper = styled(Flex)`

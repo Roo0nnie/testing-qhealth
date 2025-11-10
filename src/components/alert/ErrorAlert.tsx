@@ -10,13 +10,14 @@ const Wrapper = styled(Flex)`
   width: 100%;
   justify-content: start;
   align-items: center;
-  background-color: white;
+  background-color: #ffffff;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
 `;
 
 const Message = styled.div`
   padding: 0 20px 0 10px;
   font-size: 14px;
-  color: #231f20;
+  color: #2d2d2d;
   text-align: left;
 `;
 

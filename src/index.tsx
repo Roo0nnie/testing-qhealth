@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './components/App';
 import GlobalStyle from './style/global';
+import { ThemeProvider } from './context/ThemeContext';
 import styled from 'styled-components';
 
 const Wrapper = styled.div`
@@ -10,9 +11,11 @@ const Wrapper = styled.div`
 `;
 
 ReactDOM.render(
-  <Wrapper>
-    <GlobalStyle />
-    <App />
-  </Wrapper>,
+  <ThemeProvider>
+    <Wrapper>
+      <GlobalStyle />
+      <App />
+    </Wrapper>
+  </ThemeProvider>,
   document.getElementById('root'),
 );

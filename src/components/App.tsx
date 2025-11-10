@@ -1,29 +1,41 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import BiosenseSignalMonitor from './BiosenseSignalMonitor';
-import SettingsBars from './SettingsBars';
 import DesktopFallback from './DesktopFallback';
 import { Flex } from './shared/Flex';
 import { useCameras, useDisableZoom } from '../hooks';
 import useDeviceDetection from '../hooks/useDeviceDetection';
 import useSession from '../hooks/useSession';
+import { Spinner } from './ui/spinner';
 
-const Container = styled(Flex)<{ isSettingsOpen: boolean }>`
+const Container = styled(Flex)`
   height: 100%;
   width: 100%;
   position: relative;
   flex-direction: column;
   justify-content: start;
   align-items: center;
-  background-color: ${({ isSettingsOpen }) =>
-    isSettingsOpen && 'rgba(0, 0, 0, 0.5)'};
+`;
+
+const LoadingContainer = styled(Flex)`
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+`;
+
+const LoadingText = styled.p`
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin: 0;
 `;
 
 const App = () => {
-  const { isMobile, isDesktop } = useDeviceDetection();
+  const { isDesktop } = useDeviceDetection();
   const session = useSession(isDesktop);
   const cameras = useCameras();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [cameraId, setCameraId] = useState<string>();
   const [isLicenseValid, setIsLicenseValid] = useState(false);
   useDisableZoom();
@@ -33,58 +45,36 @@ const App = () => {
     return <DesktopFallback sessionId={session.sessionId} />;
   }
 
-  const onSettingsClickedHandler = useCallback((event) => {
-    const settingsBars = document.getElementById('settingsBars');
-    const isSettingsButtonClicked = event.target.id === 'settingsButton';
-
-    const isInsideSettingsClicked =
-      settingsBars.contains(event.target as Node) || isSettingsButtonClicked;
-
-    if (!isInsideSettingsClicked) {
-      setIsSettingsOpen(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    document.addEventListener('click', onSettingsClickedHandler);
-    return () => {
-      document.removeEventListener('click', onSettingsClickedHandler);
-    };
-  }, []);
-
-  const updateLicenseStatus = useCallback((valid) => {
+  const updateLicenseStatus = (valid) => {
     setIsLicenseValid(valid);
-  }, []);
-
-  const toggleSettingsClick = useCallback(() => {
-    setIsSettingsOpen(!isSettingsOpen);
-  }, [isSettingsOpen]);
-
-  const handleCloseSettings = useCallback(({ cameraId }) => {
-    setCameraId(cameraId);
-    setIsSettingsOpen(false);
-  }, []);
+  };
 
   useEffect(() => {
     if (!cameras?.length) return;
     setCameraId(cameras[0].deviceId);
   }, [cameras]);
 
+  // Show loading indicator when camera is not set
+  const isCameraLoading = !cameraId || cameras.length === 0;
+
+  if (isCameraLoading) {
+    return (
+      <Container>
+        <LoadingContainer>
+          <Spinner size={32} />
+          <LoadingText>Setting up camera...</LoadingText>
+        </LoadingContainer>
+      </Container>
+    );
+  }
+
   return (
-    <Container isSettingsOpen={isSettingsOpen}>
+    <Container>
       <BiosenseSignalMonitor
-        showMonitor={!(isMobile && isSettingsOpen)}
+        showMonitor={true}
         cameraId={cameraId}
         onLicenseStatus={updateLicenseStatus}
-        onSettingsClick={toggleSettingsClick}
-        isSettingsOpen={isSettingsOpen}
         sessionId={session?.sessionId}
-      />
-      <SettingsBars
-        open={isSettingsOpen}
-        onClose={handleCloseSettings}
-        cameras={cameras}
-        isLicenseValid={isLicenseValid}
       />
     </Container>
   );

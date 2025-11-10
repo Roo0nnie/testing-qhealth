@@ -2,17 +2,8 @@ import styled from 'styled-components';
 import React, { useCallback, useEffect, useState } from 'react';
 import CloseButton from './shared/CloseButton';
 import SettingsDropDown from './SettingsDropDown';
-import SettingsItem from './SettingsItem';
 import { Flex } from './shared/Flex';
 import media from '../style/media';
-import {
-  useLicenseKey,
-  useMeasurementDuration,
-  DEFAULT_MEASUREMENT_DURATION,
-  MIN_MEASUREMENT_DURATION,
-  MAX_MEASUREMENT_DURATION,
-} from '../hooks/useLicenseDetails';
-import { version } from '../../package.json';
 
 const SideBar = styled(Flex)<{ reverseAnimation }>`
   position: absolute;
@@ -22,12 +13,15 @@ const SideBar = styled(Flex)<{ reverseAnimation }>`
   width: 100%;
   top: 0;
   left: 0;
-  background-color: #f1f4f9;
+  background-color: ${({ theme }) => theme.colors.background.primary};
   overflow: hidden;
   z-index: 1;
   animation-name: ${({ reverseAnimation }) =>
     reverseAnimation ? 'slide-reverse' : 'slide'};
-  animation-duration: 0.3s;
+  animation-duration: 300ms;
+  animation-timing-function: ease-in-out;
+  box-shadow: ${({ theme }) => theme.shadows.lg};
+  transition: background-color ${({ theme }) => theme.transitions.normal};
   @keyframes slide {
     from {
       width: 0;
@@ -46,7 +40,7 @@ const SideBar = styled(Flex)<{ reverseAnimation }>`
   }
   ${media.tablet`
     width: 400px;
-    box-shadow: 2px 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: ${({ theme }) => theme.shadows.md};
     @keyframes slide {
       from {
         width: 0;
@@ -90,72 +84,17 @@ const CameraDropDown = styled.div`
 
 const Title = styled.h3`
   font-style: normal;
-  font-weight: normal;
+  font-weight: 500;
   font-size: 14px;
   line-height: 19px;
-  color: #3e3c3c;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 6px;
-`;
-
-const MeasurementDurationWrapper = styled.div`
-  margin-top: 15px;
-`;
-
-const LicenseStatus = styled.h3`
-  margin-top: 6px;
-  margin-bottom: 0;
-  font-style: normal;
-  font-weight: normal;
-  font-size: 14px;
-  line-height: 17px;
-`;
-
-const TextBold = styled.span`
-  font-weight: bold;
-`;
-
-const Version = styled.div`
-  font-size: 14px;
-  color: #3e3c3c;
-`;
-
-const ResetLinkActive = styled.a`
-  margin-top: 18px;
-  cursor: pointer;
-  color: #0653f4;
-  font-size: 14px;
-`;
-
-const ResetLinkDisabled = styled.a`
-  margin-top: 18px;
-  cursor: none;
-  color: #9fa2a6;
-  font-size: 14px;
-`;
-
-const HelpBlock = styled.div`
-  color: #d80000;
-  font-size: 12px;
-  line-height: 14px;
-  margin-top: 5px;
-  margin-left: 2px;
+  transition: color ${({ theme }) => theme.transitions.normal};
 `;
 
 const SettingsBars = ({ open, onClose, cameras, isLicenseValid }) => {
-  const [
-    processingTimeInLocalStorage,
-    setProcessingTimeInLocalStorage,
-  ] = useMeasurementDuration();
-  const [licenseKey] = useLicenseKey();
   const [cameraId, setCameraId] = useState<string>();
-  const [processingTime, setProcessingTime] = useState<number>(
-    processingTimeInLocalStorage,
-  );
-  const [isProcessingTimeValid, setIsProcessingTimeValid] = useState<boolean>(
-    true,
-  );
   const [isClosing, setIsClosing] = useState<boolean>();
-  const [isResetClickable, setIsResetClickable] = useState<boolean>(false);
 
   const mapCamerasToDropDown = useCallback(
     (cameras) =>
@@ -168,36 +107,13 @@ const SettingsBars = ({ open, onClose, cameras, isLicenseValid }) => {
   }, []);
 
   const handleClose = useCallback(() => {
-    if (!isProcessingTimeValid) {
-      return;
-    }
     setIsClosing(true);
     setTimeout(() => {
       onClose({ cameraId });
       setIsClosing(false);
     }, 200);
-  }, [cameraId, isProcessingTimeValid]);
+  }, [cameraId]);
 
-  const onProcessingTimeChange = useCallback((event) => {
-    const processingTime = event.target.value;
-    setProcessingTime(processingTime);
-    setIsProcessingTimeValid(
-      processingTime >= MIN_MEASUREMENT_DURATION &&
-        processingTime <= MAX_MEASUREMENT_DURATION,
-    );
-    setIsResetClickable(true);
-  }, []);
-
-  const onProcessingTimeBlur = useCallback((event) => {
-    setProcessingTimeInLocalStorage(event.target.value);
-  }, []);
-
-  const onResetSettingsValues = useCallback(() => {
-    setProcessingTime(DEFAULT_MEASUREMENT_DURATION);
-    setProcessingTimeInLocalStorage(DEFAULT_MEASUREMENT_DURATION);
-    setIsProcessingTimeValid(true);
-    setIsResetClickable(false);
-  }, []);
 
   useEffect(() => {
     cameras?.length && setCameraId(cameras[0].deviceId);
@@ -211,26 +127,6 @@ const SettingsBars = ({ open, onClose, cameras, isLicenseValid }) => {
             <CloseWrapper>
               <CloseButton onClick={handleClose} />
             </CloseWrapper>
-            <Version>Version: {version.replace('-', '(').concat(')')}</Version>
-            <LicenseStatus>
-              License Status:
-              <TextBold>
-                {licenseKey && isLicenseValid ? ' Valid' : ' Invalid'}
-              </TextBold>
-            </LicenseStatus>
-            <MeasurementDurationWrapper>
-              <SettingsItem
-                title={'Measurement Duration'}
-                type={'number'}
-                value={processingTime}
-                onChange={onProcessingTimeChange}
-                onBlur={onProcessingTimeBlur}
-                isValid={isProcessingTimeValid}
-              />
-            </MeasurementDurationWrapper>
-            {!isProcessingTimeValid && (
-              <HelpBlock>Valid range: 20-180</HelpBlock>
-            )}
             <CameraDropDown>
               <Title>Camera</Title>
               <SettingsDropDown
@@ -238,15 +134,6 @@ const SettingsBars = ({ open, onClose, cameras, isLicenseValid }) => {
                 options={mapCamerasToDropDown(cameras)}
               />
             </CameraDropDown>
-            {isResetClickable ? (
-              <ResetLinkActive onClick={onResetSettingsValues}>
-                Reset Settings Values
-              </ResetLinkActive>
-            ) : (
-              <ResetLinkDisabled onClick={onResetSettingsValues}>
-                Reset Settings Values
-              </ResetLinkDisabled>
-            )}
           </Wrapper>
         </SideBar>
       )}

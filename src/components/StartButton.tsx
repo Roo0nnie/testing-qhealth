@@ -21,11 +21,23 @@ const Button = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #01061b;
+  background-color: #2d5016;
   border-radius: 50%;
   cursor: pointer;
   height: inherit;
   width: inherit;
+  transition: all 300ms ease-in-out;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  &:hover {
+    background-color: #4a7c2a;
+    transform: scale(1.05);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 `;
 
 const Icon = styled.img`
