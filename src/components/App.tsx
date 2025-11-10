@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import BiosenseSignalMonitor from './BiosenseSignalMonitor';
 import SettingsBars from './SettingsBars';
+import DesktopFallback from './DesktopFallback';
 import { Flex } from './shared/Flex';
 import { useCameras, useDisableZoom } from '../hooks';
-import UAParser from 'ua-parser-js';
+import useDeviceDetection from '../hooks/useDeviceDetection';
+import useSession from '../hooks/useSession';
 
 const Container = styled(Flex)<{ isSettingsOpen: boolean }>`
   height: 100%;
@@ -18,14 +20,18 @@ const Container = styled(Flex)<{ isSettingsOpen: boolean }>`
 `;
 
 const App = () => {
+  const { isMobile, isDesktop } = useDeviceDetection();
+  const session = useSession(isDesktop);
   const cameras = useCameras();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [cameraId, setCameraId] = useState<string>();
   const [isLicenseValid, setIsLicenseValid] = useState(false);
-  const [isMobile] = useState(
-    new UAParser(navigator.userAgent).getDevice().type === 'mobile',
-  );
   useDisableZoom();
+
+  // Desktop: Show QR code fallback
+  if (isDesktop && session) {
+    return <DesktopFallback sessionId={session.sessionId} />;
+  }
 
   const onSettingsClickedHandler = useCallback((event) => {
     const settingsBars = document.getElementById('settingsBars');
@@ -72,6 +78,7 @@ const App = () => {
         onLicenseStatus={updateLicenseStatus}
         onSettingsClick={toggleSettingsClick}
         isSettingsOpen={isSettingsOpen}
+        sessionId={session?.sessionId}
       />
       <SettingsBars
         open={isSettingsOpen}

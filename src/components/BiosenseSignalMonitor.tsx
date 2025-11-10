@@ -35,6 +35,8 @@ import Loader from './Loader';
 import { VideoReadyState } from '../types';
 import TopBar from './TopBar';
 import Mask from '../assets/mask.svg';
+import { storeResults } from '../services/api';
+import { InfoType } from '../types';
 
 const MonitorWrapper = styled(Flex)<{ isSettingsOpen: boolean }>`
   flex-direction: column;
@@ -144,6 +146,7 @@ const BiosenseSignalMonitor = ({
   onLicenseStatus,
   onSettingsClick,
   isSettingsOpen,
+  sessionId,
 }) => {
   if (!showMonitor) {
     return null;
@@ -178,6 +181,7 @@ const BiosenseSignalMonitor = ({
   const prevSessionState = usePrevious(sessionState);
   const errorMessage = useError(error);
   const warningMessage = useWarning(warning);
+  const [hasSentResults, setHasSentResults] = useState(false);
 
   const isMeasuring = useCallback(
     () => sessionState === SessionState.MEASURING,
@@ -201,6 +205,48 @@ const BiosenseSignalMonitor = ({
       setStartMeasuring(false);
     }
   }, [sessionState, setIsLoading, processingTime]);
+
+  // Send results to API when measurement completes on mobile with session ID
+  useEffect(() => {
+    const sendResultsToAPI = async () => {
+      // Only send if:
+      // 1. We're on mobile (isMobile() check)
+      // 2. Session ID exists
+      // 3. Measurement just completed (state changed from MEASURING to TERMINATED)
+      // 4. We have vital signs data
+      // 5. We haven't already sent results
+      if (
+        !isMobile() ||
+        !sessionId ||
+        sessionState !== SessionState.TERMINATED ||
+        prevSessionState !== SessionState.MEASURING ||
+        !vitalSigns ||
+        hasSentResults
+      ) {
+        return;
+      }
+
+      try {
+        const result = await storeResults(sessionId, vitalSigns);
+        if (result.success) {
+          setHasSentResults(true);
+          console.log('Results sent successfully to API');
+        } else {
+          console.error('Failed to send results:', result.error);
+        }
+      } catch (err) {
+        console.error('Error sending results to API:', err);
+      }
+    };
+
+    sendResultsToAPI();
+  }, [
+    sessionState,
+    prevSessionState,
+    sessionId,
+    vitalSigns,
+    hasSentResults,
+  ]);
 
   useEffect(() => {
     if (isMeasuring()) {
