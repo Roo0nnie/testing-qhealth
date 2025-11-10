@@ -1,34 +1,22 @@
 import { MeasurementResults, VitalSigns } from "../types"
 
-// Use relative URLs - works in both dev and production
-const API_BASE_URL = ""
-
 /**
- * Store measurement results on the server
+ * Store measurement results in localStorage
+ * For local development - in production this would use Vercel serverless functions
  */
 export const storeResults = async (
 	sessionId: string,
 	vitalSigns: VitalSigns
 ): Promise<{ success: boolean; error?: string }> => {
 	try {
-		const response = await fetch(`${API_BASE_URL}/api/store-results`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				sessionId,
-				vitalSigns,
-			}),
-		})
-
-		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}))
-			throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+		const data = {
+			sessionId,
+			vitalSigns,
+			timestamp: Date.now(),
 		}
-
-		const data = await response.json()
-		return { success: data.success === true }
+		localStorage.setItem(`qhealth-session-${sessionId}`, JSON.stringify(data))
+		console.log("Results stored in localStorage:", sessionId)
+		return { success: true }
 	} catch (error) {
 		console.error("Error storing results:", error)
 		return {
@@ -39,50 +27,41 @@ export const storeResults = async (
 }
 
 /**
- * Retrieve measurement results by session ID
+ * Retrieve measurement results from localStorage by session ID
+ * For local development - in production this would use Vercel serverless functions
  */
 export const getResults = async (
 	sessionId: string
 ): Promise<{ success: boolean; data?: MeasurementResults; error?: string }> => {
 	try {
-		const response = await fetch(
-			`${API_BASE_URL}/api/get-results?sessionId=${encodeURIComponent(sessionId)}`,
-			{
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			}
-		)
-
-		if (response.status === 404) {
+		const stored = localStorage.getItem(`qhealth-session-${sessionId}`)
+		
+		if (!stored) {
 			return {
 				success: false,
 				error: "Session not found",
 			}
 		}
 
-		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}))
-			throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
-		}
+		const data = JSON.parse(stored)
 
-		const data = await response.json()
-
-		if (data.success && data.vitalSigns) {
+		// Check if session expired (older than 1 hour)
+		const oneHourAgo = Date.now() - 60 * 60 * 1000
+		if (data.timestamp < oneHourAgo) {
+			localStorage.removeItem(`qhealth-session-${sessionId}`)
 			return {
-				success: true,
-				data: {
-					sessionId: data.sessionId,
-					vitalSigns: data.vitalSigns,
-					timestamp: data.timestamp,
-				},
+				success: false,
+				error: "Session expired",
 			}
 		}
 
 		return {
-			success: false,
-			error: "Invalid response format",
+			success: true,
+			data: {
+				sessionId: data.sessionId,
+				vitalSigns: data.vitalSigns,
+				timestamp: data.timestamp,
+			},
 		}
 	} catch (error) {
 		console.error("Error retrieving results:", error)
