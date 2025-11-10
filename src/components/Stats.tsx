@@ -125,7 +125,7 @@ const vitalSignsConfig = [
   
   // Other Metrics
   { key: 'prq', title: 'PRQ', type: 'number' },
-  { key: 'heartAge', title: 'Heart Age', type: 'number' },
+  // { key: 'heartAge', title: 'Heart Age', type: 'number' },
   { key: 'hemoglobin', title: 'Hemoglobin', type: 'number' },
   { key: 'hemoglobinA1c', title: 'HbA1c', type: 'number' },
   { key: 'cardiacWorkload', title: 'Cardiac Workload', type: 'number' },
@@ -133,8 +133,8 @@ const vitalSignsConfig = [
   { key: 'pulsePressure', title: 'Pulse Pressure', type: 'number' },
   
   // Risk Indicators
-  { key: 'ascvdRisk', title: 'ASCVD Risk', type: 'risk' },
-  { key: 'ascvdRiskLevel', title: 'ASCVD Risk Level', type: 'risk' },
+  // { key: 'ascvdRisk', title: 'ASCVD Risk', type: 'risk' },
+  // { key: 'ascvdRiskLevel', title: 'ASCVD Risk Level', type: 'risk' },
   { key: 'highBloodPressureRisk', title: 'High BP Risk', type: 'risk' },
   { key: 'highFastingGlucoseRisk', title: 'High Glucose Risk', type: 'risk' },
   { key: 'highHemoglobinA1CRisk', title: 'High HbA1c Risk', type: 'risk' },

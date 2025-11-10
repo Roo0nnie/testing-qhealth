@@ -68,7 +68,7 @@ export interface VitalSigns {
   
   // Other Metrics
   prq: VitalSignWithConfidence<number>;
-  heartAge: VitalSign<number>;
+  heartAge?: VitalSign<number>;
   hemoglobin: VitalSign<number>;
   hemoglobinA1c: VitalSign<number>;
   cardiacWorkload: VitalSign<number>;
@@ -76,8 +76,8 @@ export interface VitalSigns {
   pulsePressure: VitalSign<number>;
   
   // Risk Indicators
-  ascvdRisk: VitalSign<number>;
-  ascvdRiskLevel: VitalSign<string | number>;
+  ascvdRisk?: VitalSign<number>;
+  ascvdRiskLevel?: VitalSign<string | number>;
   highBloodPressureRisk: VitalSign<RiskLevel>;
   highFastingGlucoseRisk: VitalSign<RiskLevel>;
   highHemoglobinA1CRisk: VitalSign<RiskLevel>; // Note: SDK uses 'highHemoglobinA1CRisk'
