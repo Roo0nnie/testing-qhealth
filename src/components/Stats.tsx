@@ -183,4 +183,4 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
   );
 };
 
-export default Stats;
+export default Stats

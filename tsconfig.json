@@ -1,20 +1,48 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "target": "es2017",
-    "lib": ["es2017", "dom"],
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./src",
-    "incremental": true,
-    "resolveJsonModule": true,
-    "types": ["react", "node"],
-    "jsx": "react"
-  }
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compilerOptions": {
+		/* Base Options */
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"target": "es2022",
+		"lib": ["es2022", "dom", "dom.iterable"],
+		"allowJs": true,
+		"resolveJsonModule": true,
+		"moduleDetection": "force",
+		"isolatedModules": true,
+		"types": ["node"],
+
+		/* Keep TSC performant in monorepos */
+		"incremental": true,
+
+		/* Strictness */
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"checkJs": true,
+
+		/* Transpile using Bundler (not tsc) */
+		"module": "esnext",
+		"moduleResolution": "node",
+		"noEmit": true,
+
+		/* React */
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
+
+		/* Path Aliases */
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": [
+		"**/*.cjs",
+		"**/*.js",
+		"**/*.ts",
+		"**/*.tsx",
+		"eslint.config.*",
+		"postcss.config.*",
+		"prettier.config.*"
+	],
+	"exclude": ["node_modules", "build", "dist", ".next", ".expo", "webpack.config.js"]
 }

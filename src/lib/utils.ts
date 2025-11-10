@@ -1,6 +1,6 @@
-import { type ClassValue, clsx } from "clsx"
+import type { ClassValue } from "clsx"
+import { clsx } from "clsx"
 
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs)
+	return clsx(inputs)
 }
-
