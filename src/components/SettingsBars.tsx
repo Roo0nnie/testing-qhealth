@@ -146,19 +146,13 @@ const SettingsBars = ({ open, onClose, cameras, isLicenseValid }) => {
     processingTimeInLocalStorage,
     setProcessingTimeInLocalStorage,
   ] = useMeasurementDuration();
-  const [
-    licenseKeyInLocalStorage,
-    setLicenseKeyInLocalStorage,
-  ] = useLicenseKey();
+  const [licenseKey] = useLicenseKey();
   const [cameraId, setCameraId] = useState<string>();
   const [processingTime, setProcessingTime] = useState<number>(
     processingTimeInLocalStorage,
   );
   const [isProcessingTimeValid, setIsProcessingTimeValid] = useState<boolean>(
     true,
-  );
-  const [licenseKey, setLicenseKey] = useState<string>(
-    licenseKeyInLocalStorage,
   );
   const [isClosing, setIsClosing] = useState<boolean>();
   const [isResetClickable, setIsResetClickable] = useState<boolean>(false);
@@ -198,21 +192,10 @@ const SettingsBars = ({ open, onClose, cameras, isLicenseValid }) => {
     setProcessingTimeInLocalStorage(event.target.value);
   }, []);
 
-  const onLicenseKeyChange = useCallback((event) => {
-    setLicenseKey(event.target.value);
-    setIsResetClickable(true);
-  }, []);
-
-  const onLicenseKeyBlur = useCallback((event) => {
-    setLicenseKeyInLocalStorage(event.target.value);
-  }, []);
-
   const onResetSettingsValues = useCallback(() => {
     setProcessingTime(DEFAULT_MEASUREMENT_DURATION);
     setProcessingTimeInLocalStorage(DEFAULT_MEASUREMENT_DURATION);
     setIsProcessingTimeValid(true);
-    setLicenseKey('');
-    setLicenseKeyInLocalStorage('');
     setIsResetClickable(false);
   }, []);
 
@@ -229,14 +212,6 @@ const SettingsBars = ({ open, onClose, cameras, isLicenseValid }) => {
               <CloseButton onClick={handleClose} />
             </CloseWrapper>
             <Version>Version: {version.replace('-', '(').concat(')')}</Version>
-            <SettingsItem
-              title={'License Key'}
-              type={'password'}
-              value={licenseKey}
-              onChange={onLicenseKeyChange}
-              onBlur={onLicenseKeyBlur}
-              isValid={isLicenseValid}
-            />
             <LicenseStatus>
               License Status:
               <TextBold>

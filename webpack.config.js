@@ -1,6 +1,9 @@
 const path = require('path');
+const webpack = require('webpack');
+const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 
 const paths = {
   src: path.resolve(__dirname, 'src'),
@@ -12,6 +15,30 @@ const paths = {
 
 function common() {
   const isProduction = process.env.NODE_ENV === 'production';
+
+  // Load environment variables from .env file
+  require('dotenv').config();
+  
+  // Read LICENSE_KEY from .env file directly as fallback
+  let licenseKey = process.env.LICENSE_KEY;
+  if (!licenseKey) {
+    try {
+      const envPath = path.resolve(__dirname, '.env');
+      const envFile = fs.readFileSync(envPath, 'utf8');
+      const match = envFile.match(/^LICENSE_KEY=(.+)$/m);
+      if (match) {
+        licenseKey = match[1].trim();
+      }
+    } catch (error) {
+    }
+  }
+  
+  // Debug: Log the license key status (masked for security)
+  if (licenseKey) {
+    const maskedKey = licenseKey.substring(0, 6) + '...' + licenseKey.substring(licenseKey.length - 6);
+
+  } else {
+  }
   
   return {
     mode: isProduction ? 'production' : 'development',
@@ -68,6 +95,14 @@ function common() {
       ],
     },
     plugins: [
+      new Dotenv({
+        path: path.resolve(__dirname, '.env'),
+        safe: false,
+        systemvars: true,
+      }),
+      new webpack.DefinePlugin({
+        'process.env.LICENSE_KEY': JSON.stringify(licenseKey || ''),
+      }),
       new HtmlWebpackPlugin({ 
         template: paths.html, 
         favicon: paths.icon,
