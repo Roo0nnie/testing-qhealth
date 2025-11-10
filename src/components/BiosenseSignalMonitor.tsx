@@ -18,9 +18,10 @@ import {
 	useWarning,
 } from "../hooks"
 import { DEFAULT_MEASUREMENT_DURATION } from "../hooks/useLicenseDetails"
-import { storeResults } from "../services/api"
 import { cn } from "../lib/utils"
-import { VideoReadyState } from "../types"
+import { getQHealthAPI } from "../services/qhealthClientAPI"
+import { MeasurementResults, VideoReadyState } from "../types"
+import { SessionStatus } from "../types/api"
 import { ErrorAlert, InfoAlert, WarningAlert } from "./alert"
 import StartButton from "./StartButton"
 import Stats from "./Stats"
@@ -78,11 +79,23 @@ const BiosenseSignalMonitor = ({
 		if (sessionState === SessionState.ACTIVE) {
 			setStartMeasuring(true)
 			setLoadingTimeoutPromise(window.setTimeout(() => setIsLoading(true), processingTime * 1000))
+
+			// Broadcast MEASUREMENT_STARTED event
+			if (sessionId) {
+				const api = getQHealthAPI()
+				api.broadcastEvent("MEASUREMENT_STARTED", {
+					sessionId,
+					timestamp: Date.now(),
+				})
+				api.updateSessionStatus(sessionId, SessionStatus.MEASURING).catch(err => {
+					console.error("Failed to update session status:", err)
+				})
+			}
 		} else if (isMeasuring()) {
 			clearTimeout(loadingTimeoutPromise)
 			setStartMeasuring(false)
 		}
-	}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise])
+	}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise, sessionId])
 
 	// Send results to API when measurement completes on mobile with session ID
 	useEffect(() => {
@@ -99,15 +112,27 @@ const BiosenseSignalMonitor = ({
 			}
 
 			try {
-				const result = await storeResults(sessionId, vitalSigns)
-				if (result.success) {
-					setHasSentResults(true)
-					console.log("Results sent successfully to API")
-				} else {
-					console.error("Failed to send results:", result.error)
+				// Store results via QHealth API (handles storage + broadcasting)
+				const api = getQHealthAPI()
+				const measurementResults: MeasurementResults = {
+					sessionId,
+					vitalSigns,
+					timestamp: Date.now(),
 				}
+
+				await api.storeMeasurementResults(sessionId, measurementResults)
+				await api.updateSessionStatus(sessionId, SessionStatus.COMPLETED)
+				setHasSentResults(true)
+				console.log("Results stored successfully")
 			} catch (err) {
-				console.error("Error sending results to API:", err)
+				console.error("Error storing results:", err)
+
+				// Broadcast error event
+				const api = getQHealthAPI()
+				api.broadcastEvent("ERROR", {
+					code: "STORAGE_ERROR",
+					message: err instanceof Error ? err.message : "Failed to store results",
+				})
 			}
 		}
 
@@ -119,6 +144,18 @@ const BiosenseSignalMonitor = ({
 			setIsLoading(false)
 			if (errorMessage) {
 				setIsMeasurementEnabled(false)
+				// Broadcast MEASUREMENT_FAILED event on error
+				if (sessionId) {
+					const api = getQHealthAPI()
+					api.broadcastEvent("MEASUREMENT_FAILED", {
+						sessionId,
+						error: errorMessage,
+						timestamp: Date.now(),
+					})
+					api.updateSessionStatus(sessionId, SessionStatus.FAILED).catch(err => {
+						console.error("Failed to update session status:", err)
+					})
+				}
 			} else {
 				setIsMeasurementEnabled(true)
 			}
@@ -135,7 +172,7 @@ const BiosenseSignalMonitor = ({
 			setStartMeasuring(false)
 			setIsLoading(false)
 		}
-	}, [errorMessage, sessionState, isPageVisible, isMeasuring, prevSessionState])
+	}, [errorMessage, sessionState, isPageVisible, isMeasuring, prevSessionState, sessionId])
 
 	useEffect(() => {
 		onLicenseStatus(!(error?.code in HealthMonitorCodes))
@@ -147,27 +184,27 @@ const BiosenseSignalMonitor = ({
 	return (
 		<>
 			<TopBar isMeasuring={isMeasuring()} durationSeconds={processingTime} />
-			<div className="flex flex-col w-full justify-start items-center flex-1 md:w-fit md:justify-center">
+			<div className="flex w-full flex-1 flex-col items-center justify-start md:w-fit md:justify-center">
 				<div
 					className={cn(
-						"w-auto flex flex-col justify-start items-center",
-						mobile && "h-full my-10 mb-[60px] sm:my-10 sm:mb-[60px]"
+						"flex w-auto flex-col items-center justify-start",
+						mobile && "my-10 mb-[60px] h-full sm:my-10 sm:mb-[60px]"
 					)}
 				>
 					<div
 						className={cn(
-							"relative flex justify-center w-full",
+							"relative flex w-full justify-center",
 							mobile && "h-full",
-							"md:w-[812px] md:h-[609px]",
-							"xl:w-[1016px] xl:h-[762px]"
+							"md:h-[609px] md:w-[812px]",
+							"xl:h-[762px] xl:w-[1016px]"
 						)}
 					>
-						<div className="w-full h-full -z-10">
+						<div className="-z-10 h-full w-full">
 							<img
 								src={Mask}
 								alt=""
 								className={cn(
-									"absolute w-full h-full z-[1] transition-opacity duration-300",
+									"absolute z-[1] h-full w-full transition-opacity duration-300",
 									desktop ? "object-contain" : "object-cover",
 									isVideoReady() ? "opacity-100" : "opacity-0"
 								)}
@@ -178,7 +215,7 @@ const BiosenseSignalMonitor = ({
 								muted={true}
 								playsInline={true}
 								className={cn(
-									"w-full h-full object-cover scale-x-[-1] bg-background transition-opacity duration-300",
+									"bg-background h-full w-full scale-x-[-1] object-cover transition-opacity duration-300",
 									isVideoReady() ? "opacity-100" : "opacity-0"
 								)}
 							/>
@@ -189,7 +226,7 @@ const BiosenseSignalMonitor = ({
 						{isMeasuring() && <WarningAlert message={warningMessage} />}
 						{isMeasuring() && <InfoAlert message={info.message} />}
 						{!isVideoReady() && licenseKey && (
-							<div className="absolute top-0 left-0 w-full h-full flex justify-center items-center z-[2] bg-background">
+							<div className="bg-background absolute left-0 top-0 z-[2] flex h-full w-full items-center justify-center">
 								<Spinner size={48} />
 							</div>
 						)}
@@ -197,9 +234,9 @@ const BiosenseSignalMonitor = ({
 					{isVideoReady() && (
 						<div
 							className={cn(
-								"flex-[2] z-[3] w-full flex flex-col justify-start items-center -mt-[30px]",
+								"z-[3] -mt-[30px] flex w-full flex-[2] flex-col items-center justify-start",
 								"sm:mt-[50px]",
-								"md:p-0 md:h-auto md:w-auto md:absolute md:right-0 md:bottom-[42%] md:mr-[60px] md:mt-0"
+								"md:absolute md:bottom-[42%] md:right-0 md:mr-[60px] md:mt-0 md:h-auto md:w-auto md:p-0"
 							)}
 						>
 							<StartButton

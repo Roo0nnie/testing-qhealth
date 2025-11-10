@@ -21,7 +21,7 @@ const DesktopFallback: React.FC<DesktopFallbackProps> = ({ sessionId }) => {
 	// If results are received, show results view
 	if (results) {
 		return (
-			<div className="flex flex-col items-center justify-center w-full h-full min-h-screen p-10 py-10 bg-background transition-colors duration-300">
+			<div className="bg-background flex h-full min-h-screen w-full flex-col items-center justify-center p-10 py-10 transition-colors duration-300">
 				<DesktopResults
 					results={results}
 					isLoading={isLoading}
@@ -34,10 +34,10 @@ const DesktopFallback: React.FC<DesktopFallbackProps> = ({ sessionId }) => {
 
 	// Otherwise show QR code with polling status
 	return (
-		<div className="flex flex-col items-center justify-center w-full h-full min-h-screen p-10 py-10 bg-background transition-colors duration-300">
+		<div className="bg-background flex h-full min-h-screen w-full flex-col items-center justify-center p-10 py-10 transition-colors duration-300">
 			<QRCodeDisplay sessionId={sessionId} />
 			{error && (
-				<div className="mt-5 px-6 py-3 bg-[#fee] border border-[#fcc] rounded-xl text-[#c33] max-w-[500px] shadow-md">
+				<div className="mt-5 max-w-[500px] rounded-xl border border-[#fcc] bg-[#fee] px-6 py-3 text-[#c33] shadow-md">
 					{error}
 				</div>
 			)}

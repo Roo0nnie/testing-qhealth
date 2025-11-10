@@ -1,6 +1,8 @@
-import React from "react"
+import React, { useEffect, useRef } from "react"
 
+import { getQHealthAPI } from "../services/qhealthClientAPI"
 import { MeasurementResults } from "../types"
+import { SessionStatus } from "../types/api"
 import Stats from "./Stats"
 import { Spinner } from "./ui/spinner"
 
@@ -21,10 +23,30 @@ const DesktopResults: React.FC<DesktopResultsProps> = ({
 	error,
 	isPolling,
 }) => {
+	const hasBroadcastedRef = useRef(false)
+
+	// Broadcast MEASUREMENT_COMPLETE event when results are received
+	useEffect(() => {
+		if (results && !hasBroadcastedRef.current) {
+			hasBroadcastedRef.current = true
+			const api = getQHealthAPI()
+
+			// Store results via API
+			api.storeMeasurementResults(results.sessionId, results).catch(err => {
+				console.error("Failed to store measurement results:", err)
+			})
+
+			// Update session status
+			api.updateSessionStatus(results.sessionId, SessionStatus.COMPLETED).catch(err => {
+				console.error("Failed to update session status:", err)
+			})
+		}
+	}, [results])
+
 	if (error && !isPolling) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-6 p-10 w-full">
-				<div className="text-center px-5 py-5 bg-[#fee] border border-[#fcc] rounded-xl text-[#c33] max-w-[500px] shadow-md">
+			<div className="flex w-full flex-col items-center justify-center gap-6 p-10">
+				<div className="max-w-[500px] rounded-xl border border-[#fcc] bg-[#fee] px-5 py-5 text-center text-[#c33] shadow-md">
 					<strong>Error:</strong> {error}
 				</div>
 			</div>
@@ -33,8 +55,8 @@ const DesktopResults: React.FC<DesktopResultsProps> = ({
 
 	if (isLoading || isPolling) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-6 p-10 w-full">
-				<div className="text-center px-5 py-5 text-muted-foreground">
+			<div className="flex w-full flex-col items-center justify-center gap-6 p-10">
+				<div className="text-muted-foreground px-5 py-5 text-center">
 					<Spinner size={32} />
 					<p className="mt-4">
 						Waiting for measurement results...
@@ -53,15 +75,15 @@ const DesktopResults: React.FC<DesktopResultsProps> = ({
 	const formattedDate = new Date(results.timestamp).toLocaleString()
 
 	return (
-		<div className="flex flex-col items-center justify-center gap-6 p-10 w-full">
-			<div className="text-center mb-6">
-				<h2 className="text-[28px] font-semibold text-[#333] mb-2">Measurement Complete!</h2>
+		<div className="flex w-full flex-col items-center justify-center gap-6 p-10">
+			<div className="mb-6 text-center">
+				<h2 className="mb-2 text-[28px] font-semibold text-[#333]">Measurement Complete!</h2>
 				<p className="text-base text-[#666]">Your vital signs have been measured successfully.</p>
 			</div>
-			<div className="w-full max-w-[800px] relative min-h-[400px]">
+			<div className="relative min-h-[400px] w-full max-w-[800px]">
 				<Stats vitalSigns={results.vitalSigns} />
 			</div>
-			<div className="text-sm text-[#999] text-center mt-6">Measured at: {formattedDate}</div>
+			<div className="mt-6 text-center text-sm text-[#999]">Measured at: {formattedDate}</div>
 		</div>
 	)
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 
-import { getResults } from "../services/api"
+import { getQHealthAPI } from "../services/qhealthClientAPI"
 import { MeasurementResults } from "../types"
 
 interface UseResultsPollingReturn {
@@ -60,23 +60,21 @@ const useResultsPolling = (sessionId: string | null, enabled: boolean): UseResul
 			}
 
 			try {
-				const response = await getResults(sessionId)
+				const api = getQHealthAPI()
+				const results = await api.adapter.getResults(sessionId)
 
-				if (response.success && response.data) {
+				if (results) {
 					// Results received - stop polling
-					setResults(response.data)
+					setResults(results)
 					setIsLoading(false)
 					setIsPolling(false)
 					if (pollingIntervalRef.current) {
 						clearInterval(pollingIntervalRef.current)
 						pollingIntervalRef.current = null
 					}
-				} else if (response.error === "Session not found") {
+				} else {
 					// Session not found yet - continue polling
 					setError(null)
-				} else {
-					// Other error
-					setError(response.error || "Failed to retrieve results")
 				}
 			} catch (err) {
 				console.error("Polling error:", err)
