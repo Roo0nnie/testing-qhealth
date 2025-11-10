@@ -1,24 +1,4 @@
 import React, { useCallback } from "react"
-import styled from "styled-components"
-
-const Select = styled.select`
-	padding-left: 10px;
-	border: 1px solid #000000;
-	box-sizing: border-box;
-	border-radius: 5px;
-	background-color: #f1f4f9;
-	width: 340px;
-	height: 36px;
-	color: #3e3c3c;
-`
-
-const Option = styled.option`
-	font-style: normal;
-	font-weight: normal;
-	font-size: 14px;
-	line-height: 17px;
-	color: #3e3c3c;
-`
 
 interface SettingsDropDownProps {
 	options: Array<{ value: string; name: string }>
@@ -28,19 +8,21 @@ interface SettingsDropDownProps {
 const SettingsDropDown = ({ options, onSelect }: SettingsDropDownProps) => {
 	const handleChange = useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => onSelect(event.target.value),
-		[]
+		[onSelect]
 	)
-	// useEffect(() => {
-	//   // options?.length && onSelect(options[0].value);
-	// }, [options]);
+
 	return (
-		<Select onChange={handleChange}>
+		<select
+			onChange={handleChange}
+			className="pl-[10px] border border-black box-border rounded-[5px] bg-[#f1f4f9] w-[340px] h-9 text-[#3e3c3c]"
+		>
 			{options?.map(({ value, name }: { value: string; name: string }) => (
-				<Option key={value} value={value}>
+				<option key={value} value={value} className="font-normal text-sm leading-[17px] text-[#3e3c3c]">
 					{name}
-				</Option>
+				</option>
 			))}
-		</Select>
+		</select>
 	)
 }
+
 export default SettingsDropDown

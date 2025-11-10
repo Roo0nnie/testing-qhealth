@@ -1,52 +1,7 @@
 import React, { useState } from "react"
-import styled from "styled-components"
 
 import Visibility from "../assets/visibility.svg"
-
-const Container = styled.div`
-	display: flex;
-	position: relative;
-	align-items: center;
-	width: 340px;
-	height: 36px;
-`
-
-const Input = styled.input<{ inValid: boolean }>`
-	padding-left: 10px;
-	padding-right: 35px;
-	box-sizing: border-box;
-	border-radius: 8px;
-	background-color: #ffffff;
-	width: inherit;
-	height: inherit;
-	color: #2d2d2d;
-	border: 1px solid #d4d4d0;
-	transition: all 300ms ease-in-out;
-	font-size: 14px;
-
-	&:focus {
-		border-width: 2px;
-		outline: none;
-		border-color: ${({ inValid }) => (inValid ? "#c33" : "#4a7c2a")};
-		box-shadow: 0 0 0 3px
-			${({ inValid }) => (inValid ? "rgba(204, 51, 51, 0.1)" : "rgba(74, 124, 42, 0.1)")};
-	}
-
-	&:hover {
-		border-color: ${({ inValid }) => (inValid ? "#c33" : "#8b8b8b")};
-	}
-`
-
-const ImageWrapper = styled.div`
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	cursor: pointer;
-	position: absolute;
-	right: 0;
-	padding: 0 10px;
-	height: inherit;
-`
+import { cn } from "../lib/utils"
 
 interface PasswordInputProps {
 	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -59,18 +14,27 @@ const PasswordInput = ({ onChange, onBlur, value, isValid = true }: PasswordInpu
 	const [showPassword, setShowPassword] = useState<boolean>(false)
 
 	return (
-		<Container>
-			<Input
-				type={showPassword ? "string" : "password"}
+		<div className="flex relative items-center w-[340px] h-9">
+			<input
+				type={showPassword ? "text" : "password"}
 				onChange={onChange}
 				onBlur={onBlur}
 				value={value}
-				inValid={!isValid}
+				className={cn(
+					"pl-[10px] pr-[35px] box-border rounded-lg bg-white w-full h-full text-foreground border transition-all duration-300 text-sm",
+					"focus:border-2 focus:outline-none focus:shadow-[0_0_0_3px]",
+					isValid
+						? "border-[#d4d4d0] focus:border-[#4a7c2a] focus:shadow-[#4a7c2a33] hover:border-[#8b8b8b]"
+						: "border-[#d4d4d0] focus:border-[#c33] focus:shadow-[#c33333] hover:border-[#c33]"
+				)}
 			/>
-			<ImageWrapper onClick={() => setShowPassword(!showPassword)}>
+			<div
+				className="flex justify-center items-center cursor-pointer absolute right-0 px-[10px] h-full"
+				onClick={() => setShowPassword(!showPassword)}
+			>
 				<img src={Visibility} alt="" />
-			</ImageWrapper>
-		</Container>
+			</div>
+		</div>
 	)
 }
 

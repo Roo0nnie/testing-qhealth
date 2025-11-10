@@ -1,65 +1,11 @@
 import React, { useEffect, useState } from "react"
-import styled from "styled-components"
 
 import { useCameras, useDisableZoom } from "../hooks"
 import useDeviceDetection from "../hooks/useDeviceDetection"
 import useSession from "../hooks/useSession"
 import BiosenseSignalMonitor from "./BiosenseSignalMonitor"
 import DesktopFallback from "./DesktopFallback"
-import { Flex } from "./shared/Flex"
 import { Spinner } from "./ui/spinner"
-
-const Container = styled(Flex)`
-	height: 100%;
-	width: 100%;
-	position: relative;
-	flex-direction: column;
-	justify-content: start;
-	align-items: center;
-`
-
-const LoadingContainer = styled(Flex)`
-	height: 100%;
-	width: 100%;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	gap: 16px;
-	padding: 20px;
-`
-
-const LoadingText = styled.p`
-	font-size: 16px;
-	color: ${({ theme }) => theme.colors.text.primary};
-	margin: 0;
-	text-align: center;
-`
-
-const ErrorContainer = styled(Flex)`
-	height: 100%;
-	width: 100%;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	gap: 20px;
-	padding: 20px;
-	text-align: center;
-`
-
-const ErrorText = styled.p`
-	font-size: 16px;
-	color: ${({ theme }) => theme.colors.text.primary};
-	margin: 0;
-	line-height: 1.5;
-	max-width: 500px;
-`
-
-const ErrorTitle = styled.h2`
-	font-size: 20px;
-	color: ${({ theme }) => theme.colors.text.primary};
-	margin: 0;
-	font-weight: 600;
-`
 
 const App = () => {
 	const { isDesktop } = useDeviceDetection()
@@ -114,47 +60,47 @@ const App = () => {
 		}
 
 		return (
-			<Container>
-				<ErrorContainer>
-					<ErrorTitle>Camera Setup Error</ErrorTitle>
-					<ErrorText>
+			<div className="relative flex h-full w-full flex-col items-center justify-start">
+				<div className="flex h-full w-full flex-col items-center justify-center gap-5 p-5 text-center">
+					<h2 className="text-foreground m-0 text-xl font-semibold">Camera Setup Error</h2>
+					<p className="text-foreground m-0 max-w-[500px] text-base leading-relaxed">
 						{errorMessage}
 						{instructions}
-					</ErrorText>
-					<ErrorText style={{ fontSize: "14px", opacity: 0.8 }}>
+					</p>
+					<p className="text-foreground m-0 text-sm opacity-80">
 						Please refresh the page after granting camera permissions.
-					</ErrorText>
-				</ErrorContainer>
-			</Container>
+					</p>
+				</div>
+			</div>
 		)
 	}
 
 	// Show loading indicator when camera is being set up
 	if (isCameraLoading || !cameraId || cameras.length === 0) {
 		return (
-			<Container>
-				<LoadingContainer>
+			<div className="relative flex h-full w-full flex-col items-center justify-start">
+				<div className="flex h-full w-full flex-col items-center justify-center gap-4 p-5">
 					<Spinner size={32} />
-					<LoadingText>Setting up camera...</LoadingText>
+					<p className="text-foreground m-0 text-center text-base">Setting up camera...</p>
 					{hasTimedOut && (
-						<LoadingText style={{ fontSize: "14px", opacity: 0.7 }}>
+						<p className="text-foreground m-0 text-sm opacity-70">
 							This is taking longer than usual. Please ensure camera permissions are granted.
-						</LoadingText>
+						</p>
 					)}
-				</LoadingContainer>
-			</Container>
+				</div>
+			</div>
 		)
 	}
 
 	return (
-		<Container>
+		<div className="relative flex h-full w-full flex-col items-center justify-start">
 			<BiosenseSignalMonitor
 				showMonitor={true}
 				cameraId={cameraId}
 				onLicenseStatus={updateLicenseStatus}
 				sessionId={session?.sessionId}
 			/>
-		</Container>
+		</div>
 	)
 }
 

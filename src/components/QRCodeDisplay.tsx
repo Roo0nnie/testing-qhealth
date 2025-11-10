@@ -1,57 +1,6 @@
 import React, { useMemo } from "react"
 // @ts-ignore - qrcode.react doesn't have full TypeScript support
 import { QRCodeSVG } from "qrcode.react"
-import styled from "styled-components"
-
-import { Flex } from "./shared/Flex"
-
-const Container = styled(Flex)`
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 20px;
-	padding: 40px;
-`
-
-const QRCodeWrapper = styled.div`
-	padding: 20px;
-	background-color: ${({ theme }) => theme.colors.background.secondary};
-	border-radius: ${({ theme }) => theme.borderRadius.lg};
-	box-shadow: ${({ theme }) => theme.shadows.md};
-	transition:
-		background-color ${({ theme }) => theme.transitions.normal},
-		box-shadow ${({ theme }) => theme.transitions.normal};
-`
-
-const Instructions = styled.div`
-	text-align: center;
-	max-width: 400px;
-`
-
-const Title = styled.h2`
-	font-size: 24px;
-	font-weight: 600;
-	margin-bottom: 16px;
-	color: ${({ theme }) => theme.colors.text.primary};
-	transition: color ${({ theme }) => theme.transitions.normal};
-`
-
-const Description = styled.p`
-	font-size: 16px;
-	color: ${({ theme }) => theme.colors.text.secondary};
-	line-height: 1.5;
-	margin-bottom: 12px;
-	transition: color ${({ theme }) => theme.transitions.normal};
-`
-
-const SessionIdText = styled.div`
-	font-size: 12px;
-	color: ${({ theme }) => theme.colors.text.tertiary};
-	font-family: monospace;
-	margin-top: 12px;
-	word-break: break-all;
-	transition: color ${({ theme }) => theme.transitions.normal};
-`
 
 interface QRCodeDisplayProps {
 	sessionId: string
@@ -78,19 +27,23 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ sessionId, mobileUrl }) =
 	const qrCodeUrl = `${baseUrl}?session=${sessionId}`
 
 	return (
-		<Container>
-			<Instructions>
-				<Title>Scan with Your Phone</Title>
-				<Description>
+		<div className="flex flex-col items-center justify-center gap-5 p-10">
+			<div className="text-center max-w-[400px]">
+				<h2 className="text-2xl font-semibold mb-4 text-foreground transition-colors duration-300">
+					Scan with Your Phone
+				</h2>
+				<p className="text-base text-muted-foreground leading-relaxed mb-3 transition-colors duration-300">
 					This feature requires a mobile phone camera. Please scan the QR code below with your phone
 					to continue with the measurement.
-				</Description>
-			</Instructions>
-			<QRCodeWrapper>
+				</p>
+			</div>
+			<div className="p-5 bg-card rounded-lg shadow-md transition-colors duration-300">
 				<QRCodeSVG value={qrCodeUrl} size={256} level="M" />
-			</QRCodeWrapper>
-			<SessionIdText>Session: {sessionId}</SessionIdText>
-		</Container>
+			</div>
+			<div className="text-xs text-muted-foreground font-mono mt-3 break-all transition-colors duration-300">
+				Session: {sessionId}
+			</div>
+		</div>
 	)
 }
 

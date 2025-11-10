@@ -1,96 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react"
-import styled from "styled-components"
 
-import media from "../style/media"
+import { cn } from "../lib/utils"
 import SettingsDropDown from "./SettingsDropDown"
 import CloseButton from "./shared/CloseButton"
-import { Flex } from "./shared/Flex"
-
-const SideBar = styled(Flex)<{ reverseAnimation: boolean }>`
-	position: absolute;
-	flex-direction: column;
-	align-items: center;
-	height: 100vh;
-	width: 100%;
-	top: 0;
-	left: 0;
-	background-color: ${({ theme }) => theme.colors.background.primary};
-	overflow: hidden;
-	z-index: 1;
-	animation-name: ${({ reverseAnimation }) => (reverseAnimation ? "slide-reverse" : "slide")};
-	animation-duration: 300ms;
-	animation-timing-function: ease-in-out;
-	box-shadow: ${({ theme }) => theme.shadows.lg};
-	transition: background-color ${({ theme }) => theme.transitions.normal};
-	@keyframes slide {
-		from {
-			width: 0;
-		}
-		to {
-			width: 100%;
-		}
-	}
-	@keyframes slide-reverse {
-		from {
-			width: 100%;
-		}
-		to {
-			width: 0;
-		}
-	}
-	${media.tablet`
-    width: 400px;
-    box-shadow: ${({ theme }: any) => theme.shadows.md};
-    @keyframes slide {
-      from {
-        width: 0;
-      }
-      to {
-        width: 400px;
-      }
-    }
-    @keyframes slide-reverse {
-      from {
-        width: 400px;
-      }
-      to {
-        width: 0;
-      }
-    }
-`}
-`
-
-const Wrapper = styled(Flex)`
-	flex-direction: column;
-	margin-top: 80px;
-	width: 340px;
-	box-sizing: border-box;
-`
-
-const CloseWrapper = styled(Flex)`
-	justify-content: flex-end;
-	align-items: center;
-	width: 100%;
-	margin-bottom: 15px;
-`
-
-const CameraDropDown = styled.div`
-	display: none;
-	${media.tablet`
-    margin-top: 15px;
-    display: block;
-  `}
-`
-
-const Title = styled.h3`
-	font-style: normal;
-	font-weight: 500;
-	font-size: 14px;
-	line-height: 19px;
-	color: ${({ theme }) => theme.colors.text.primary};
-	margin-bottom: 6px;
-	transition: color ${({ theme }) => theme.transitions.normal};
-`
 
 interface SettingsBarsProps {
 	open: boolean
@@ -101,7 +13,8 @@ interface SettingsBarsProps {
 
 const SettingsBars = ({ open, onClose, cameras, isLicenseValid }: SettingsBarsProps) => {
 	const [cameraId, setCameraId] = useState<string>()
-	const [isClosing, setIsClosing] = useState<boolean>()
+	const [isClosing, setIsClosing] = useState<boolean>(false)
+	const [shouldRender, setShouldRender] = useState<boolean>(false)
 
 	const mapCamerasToDropDown = useCallback(
 		(cameras: Array<{ deviceId: string; label: string }>) =>
@@ -118,31 +31,53 @@ const SettingsBars = ({ open, onClose, cameras, isLicenseValid }: SettingsBarsPr
 		setTimeout(() => {
 			onClose({ cameraId })
 			setIsClosing(false)
-		}, 200)
-	}, [cameraId])
+			setShouldRender(false)
+		}, 300)
+	}, [cameraId, onClose])
 
 	useEffect(() => {
-		cameras?.length && setCameraId(cameras[0]?.deviceId)
+		if (cameras?.length) {
+			setCameraId(cameras[0]?.deviceId)
+		}
 	}, [cameras])
+
+	useEffect(() => {
+		if (open) {
+			setShouldRender(true)
+			setIsClosing(false)
+		}
+	}, [open])
+
+	if (!shouldRender && !isClosing) {
+		return null
+	}
 
 	return (
 		<div id="settingsBars">
-			{open && (
-				<SideBar reverseAnimation={!!isClosing}>
-					<Wrapper>
-						<CloseWrapper>
-							<CloseButton onClick={handleClose} />
-						</CloseWrapper>
-						<CameraDropDown>
-							<Title>Camera</Title>
-							<SettingsDropDown
-								onSelect={handleCameraSelected}
-								options={mapCamerasToDropDown(cameras)}
-							/>
-						</CameraDropDown>
-					</Wrapper>
-				</SideBar>
-			)}
+			<div
+				className={cn(
+					"absolute flex flex-col items-center h-screen top-0 left-0 bg-background overflow-hidden z-[1] shadow-lg transition-all duration-300 ease-in-out",
+					"md:w-[400px] md:shadow-md"
+				)}
+				style={{
+					width: isClosing ? "0" : "100%",
+				}}
+			>
+				<div className="flex flex-col mt-20 w-[340px] box-border min-w-[340px]">
+					<div className="flex justify-end items-center w-full mb-4">
+						<CloseButton onClick={handleClose} />
+					</div>
+					<div className="hidden md:block md:mt-4">
+						<h3 className="font-normal font-medium text-sm leading-[19px] text-foreground mb-1.5 transition-colors duration-300">
+							Camera
+						</h3>
+						<SettingsDropDown
+							onSelect={handleCameraSelected}
+							options={mapCamerasToDropDown(cameras)}
+						/>
+					</div>
+				</div>
+			</div>
 		</div>
 	)
 }

@@ -1,22 +1,8 @@
 import React from "react"
-import styled from "styled-components"
 
 import useResultsPolling from "../hooks/useResultsPolling"
 import DesktopResults from "./DesktopResults"
 import QRCodeDisplay from "./QRCodeDisplay"
-import { Flex } from "./shared/Flex"
-
-const Container = styled(Flex)`
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	height: 100%;
-	min-height: 100vh;
-	padding: 40px 20px;
-	background: ${({ theme }) => theme.colors.background.primary};
-	transition: background-color ${({ theme }) => theme.transitions.normal};
-`
 
 interface DesktopFallbackProps {
 	sessionId: string
@@ -35,43 +21,27 @@ const DesktopFallback: React.FC<DesktopFallbackProps> = ({ sessionId }) => {
 	// If results are received, show results view
 	if (results) {
 		return (
-			<Container>
+			<div className="flex flex-col items-center justify-center w-full h-full min-h-screen p-10 py-10 bg-background transition-colors duration-300">
 				<DesktopResults
 					results={results}
 					isLoading={isLoading}
 					error={error}
 					isPolling={isPolling}
 				/>
-			</Container>
+			</div>
 		)
 	}
 
 	// Otherwise show QR code with polling status
 	return (
-		<Container>
+		<div className="flex flex-col items-center justify-center w-full h-full min-h-screen p-10 py-10 bg-background transition-colors duration-300">
 			<QRCodeDisplay sessionId={sessionId} />
-			{/* {isPolling && (
-        <div style={{ marginTop: '20px', textAlign: 'center', color: '#666' }}>
-          Waiting for measurement results...
-        </div>
-      )} */}
 			{error && (
-				<div
-					style={{
-						marginTop: "20px",
-						padding: "12px 24px",
-						backgroundColor: "#fee",
-						border: "1px solid #fcc",
-						borderRadius: "12px",
-						color: "#c33",
-						maxWidth: "500px",
-						boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-					}}
-				>
+				<div className="mt-5 px-6 py-3 bg-[#fee] border border-[#fcc] rounded-xl text-[#c33] max-w-[500px] shadow-md">
 					{error}
 				</div>
 			)}
-		</Container>
+		</div>
 	)
 }
 

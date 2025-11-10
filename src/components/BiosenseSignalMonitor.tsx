@@ -7,7 +7,6 @@ import {
 	SessionState,
 } from "@biosensesignal/web-sdk"
 import { useMediaPredicate } from "react-media-hook"
-import styled from "styled-components"
 
 import Mask from "../assets/mask.svg"
 import {
@@ -20,123 +19,13 @@ import {
 } from "../hooks"
 import { DEFAULT_MEASUREMENT_DURATION } from "../hooks/useLicenseDetails"
 import { storeResults } from "../services/api"
-import media from "../style/media"
-import { mirror } from "../style/mirror"
-// import Loader from './Loader';
+import { cn } from "../lib/utils"
 import { VideoReadyState } from "../types"
 import { ErrorAlert, InfoAlert, WarningAlert } from "./alert"
-import { Flex } from "./shared/Flex"
 import StartButton from "./StartButton"
 import Stats from "./Stats"
 import TopBar from "./TopBar"
 import { Spinner } from "./ui/spinner"
-
-const MonitorWrapper = styled(Flex)`
-	flex-direction: column;
-	width: 100%;
-	justify-content: start;
-	align-items: center;
-	flex: 1;
-	${media.tablet`
-    width: fit-content;
-    justify-content: center;
-  `}
-`
-
-const MeasurementContentWrapper = styled(Flex)<{ isMobile: boolean }>`
-	width: auto;
-	height: ${({ isMobile }) => isMobile && "100%"};
-	flex-direction: column;
-	justify-content: flex-start;
-	align-items: center;
-	${media.mobile`
-    margin: 40px 0 60px 0;
-  `}
-`
-
-const VideoAndStatsWrapper = styled(Flex)<{ isMobile: boolean }>`
-	position: relative;
-	justify-content: center;
-	width: 100%;
-	height: ${({ isMobile }) => isMobile && "100%"};
-	${media.tablet`
-    width: 812px;
-    height: 609px;
-  `} ${media.wide`
-    width: 1016px;
-    height: 762px;
-  `};
-`
-
-const VideoWrapper = styled.div`
-	width: 100%;
-	height: 100%;
-	z-index: -1;
-`
-
-const Img = styled.img<{ isDesktop: boolean; isReady: boolean }>`
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	z-index: 1;
-	object-fit: ${({ isDesktop }) => (isDesktop ? "contain" : "cover")};
-	opacity: ${({ isReady }) => (isReady ? 1 : 0)};
-	transition: opacity 0.3s ease-in-out;
-`
-
-const Video = styled.video<{ isReady: boolean }>`
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	${mirror};
-	background-color: ${({ theme }) => theme.colors.background.primary};
-	opacity: ${({ isReady }) => (isReady ? 1 : 0)};
-	transition: opacity 0.3s ease-in-out;
-`
-
-const LoadingOverlay = styled(Flex)`
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	justify-content: center;
-	align-items: center;
-	z-index: 2;
-	background-color: ${({ theme }) => theme.colors.background.primary};
-`
-
-const ButtonWrapper = styled(Flex)`
-	flex: 2;
-	z-index: 3;
-	width: 100%;
-	flex-direction: column;
-	justify-content: start;
-	align-items: center;
-	margin-top: -30px;
-	${media.mobile`
-    margin-top: 50px;
-  `}
-	${media.tablet`
-  padding: 0;
-  height: auto;
-  width: auto;
-  position: absolute;
-  right: 0;
-  bottom: 42%;
-  margin-right: 60px;
-  `}
-`
-
-const InfoBarWrapper = styled.div`
-	height: 25px;
-	width: 100%;
-	display: flex;
-	align-items: flex-end;
-	${media.mobile`
-    flex: 0.45;
-  `}
-`
 
 interface BiosenseSignalMonitorProps {
 	showMonitor: boolean
@@ -193,7 +82,7 @@ const BiosenseSignalMonitor = ({
 			clearTimeout(loadingTimeoutPromise)
 			setStartMeasuring(false)
 		}
-	}, [sessionState, setIsLoading, processingTime])
+	}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise])
 
 	// Send results to API when measurement completes on mobile with session ID
 	useEffect(() => {
@@ -233,7 +122,9 @@ const BiosenseSignalMonitor = ({
 			} else {
 				setIsMeasurementEnabled(true)
 			}
-			!isPageVisible && setStartMeasuring(false)
+			if (!isPageVisible) {
+				setStartMeasuring(false)
+			}
 		} else if (
 			(sessionState === SessionState.ACTIVE || sessionState === SessionState.TERMINATED) &&
 			errorMessage
@@ -244,11 +135,11 @@ const BiosenseSignalMonitor = ({
 			setStartMeasuring(false)
 			setIsLoading(false)
 		}
-	}, [errorMessage, sessionState, isPageVisible])
+	}, [errorMessage, sessionState, isPageVisible, isMeasuring, prevSessionState])
 
 	useEffect(() => {
 		onLicenseStatus(!(error?.code in HealthMonitorCodes))
-	}, [error])
+	}, [error, onLicenseStatus])
 
 	const mobile = useMemo(() => isMobile(), [])
 	const desktop = useMemo(() => !isTablet() && !isMobile(), [])
@@ -256,41 +147,70 @@ const BiosenseSignalMonitor = ({
 	return (
 		<>
 			<TopBar isMeasuring={isMeasuring()} durationSeconds={processingTime} />
-			<MonitorWrapper>
-				<MeasurementContentWrapper isMobile={mobile}>
-					<VideoAndStatsWrapper isMobile={mobile}>
-						<VideoWrapper>
-							<Img src={Mask} isDesktop={desktop} isReady={isVideoReady()} />
-							<Video
+			<div className="flex flex-col w-full justify-start items-center flex-1 md:w-fit md:justify-center">
+				<div
+					className={cn(
+						"w-auto flex flex-col justify-start items-center",
+						mobile && "h-full my-10 mb-[60px] sm:my-10 sm:mb-[60px]"
+					)}
+				>
+					<div
+						className={cn(
+							"relative flex justify-center w-full",
+							mobile && "h-full",
+							"md:w-[812px] md:h-[609px]",
+							"xl:w-[1016px] xl:h-[762px]"
+						)}
+					>
+						<div className="w-full h-full -z-10">
+							<img
+								src={Mask}
+								alt=""
+								className={cn(
+									"absolute w-full h-full z-[1] transition-opacity duration-300",
+									desktop ? "object-contain" : "object-cover",
+									isVideoReady() ? "opacity-100" : "opacity-0"
+								)}
+							/>
+							<video
 								ref={video}
 								id="video"
 								muted={true}
 								playsInline={true}
-								isReady={isVideoReady()}
+								className={cn(
+									"w-full h-full object-cover scale-x-[-1] bg-background transition-opacity duration-300",
+									isVideoReady() ? "opacity-100" : "opacity-0"
+								)}
 							/>
-						</VideoWrapper>
+						</div>
 						{(isMeasuring() ? !errorMessage && !warningMessage : !errorMessage) &&
 							isMeasurementEnabled && <Stats vitalSigns={vitalSigns} />}
 						<ErrorAlert message={errorMessage} />
 						{isMeasuring() && <WarningAlert message={warningMessage} />}
 						{isMeasuring() && <InfoAlert message={info.message} />}
 						{!isVideoReady() && licenseKey && (
-							<LoadingOverlay>
+							<div className="absolute top-0 left-0 w-full h-full flex justify-center items-center z-[2] bg-background">
 								<Spinner size={48} />
-							</LoadingOverlay>
+							</div>
 						)}
-					</VideoAndStatsWrapper>
+					</div>
 					{isVideoReady() && (
-						<ButtonWrapper>
+						<div
+							className={cn(
+								"flex-[2] z-[3] w-full flex flex-col justify-start items-center -mt-[30px]",
+								"sm:mt-[50px]",
+								"md:p-0 md:h-auto md:w-auto md:absolute md:right-0 md:bottom-[42%] md:mr-[60px] md:mt-0"
+							)}
+						>
 							<StartButton
 								isLoading={isLoading}
 								isMeasuring={isMeasuring()}
 								onClick={handleButtonClick}
 							/>
-						</ButtonWrapper>
+						</div>
 					)}
-				</MeasurementContentWrapper>
-			</MonitorWrapper>
+				</div>
+			</div>
 		</>
 	)
 }

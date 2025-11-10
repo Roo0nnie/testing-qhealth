@@ -1,18 +1,11 @@
 import React from "react"
-import styled from "styled-components"
 
 import logo from "../assets/gaia.svg"
-
-const Img = styled.img`
-	height: 50px;
-	padding-top: 9px;
-	pointer-events: none;
-`
 
 const Logo = () => {
 	return (
 		<div>
-			<Img src={logo} />
+			<img src={logo} alt="Logo" className="h-[50px] pt-[9px] pointer-events-none" />
 		</div>
 	)
 }

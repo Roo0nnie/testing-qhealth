@@ -1,22 +1,15 @@
 import React from "react"
 import ReactDOM from "react-dom"
-import styled from "styled-components"
 
 import App from "./components/App"
 import { ThemeProvider } from "./context/ThemeContext"
-import GlobalStyle from "./style/global"
-
-const Wrapper = styled.div`
-	width: 100%;
-	height: 100%;
-`
+import "./index.css"
 
 ReactDOM.render(
 	<ThemeProvider>
-		<Wrapper>
-			<GlobalStyle />
+		<div className="w-full h-full">
 			<App />
-		</Wrapper>
+		</div>
 	</ThemeProvider>,
 	document.getElementById("root")
 )

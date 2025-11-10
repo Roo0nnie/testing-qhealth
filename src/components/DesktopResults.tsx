@@ -1,69 +1,8 @@
 import React from "react"
-import styled from "styled-components"
 
-import { MeasurementResults, VitalSigns } from "../types"
-import { Flex } from "./shared/Flex"
+import { MeasurementResults } from "../types"
 import Stats from "./Stats"
 import { Spinner } from "./ui/spinner"
-
-const Container = styled(Flex)`
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 24px;
-	padding: 40px;
-	width: 100%;
-`
-
-const ResultsWrapper = styled.div`
-	width: 100%;
-	max-width: 800px;
-	position: relative;
-	min-height: 400px;
-`
-
-const SuccessMessage = styled.div`
-	text-align: center;
-	margin-bottom: 24px;
-`
-
-const Title = styled.h2`
-	font-size: 28px;
-	font-weight: 600;
-	color: #333;
-	margin-bottom: 8px;
-`
-
-const Subtitle = styled.p`
-	font-size: 16px;
-	color: #666;
-`
-
-const Timestamp = styled.div`
-	font-size: 14px;
-	color: #999;
-	text-align: center;
-	margin-top: 24px;
-`
-
-const ErrorMessage = styled.div`
-	text-align: center;
-	padding: 20px;
-	background-color: #fee;
-	border: 1px solid #fcc;
-	border-radius: 12px;
-	color: #c33;
-	max-width: 500px;
-	box-shadow:
-		0 4px 6px -1px rgba(0, 0, 0, 0.1),
-		0 2px 4px -1px rgba(0, 0, 0, 0.06);
-`
-
-const LoadingMessage = styled.div`
-	text-align: center;
-	padding: 20px;
-	color: #666;
-`
 
 interface DesktopResultsProps {
 	results: MeasurementResults | null
@@ -84,26 +23,26 @@ const DesktopResults: React.FC<DesktopResultsProps> = ({
 }) => {
 	if (error && !isPolling) {
 		return (
-			<Container>
-				<ErrorMessage>
+			<div className="flex flex-col items-center justify-center gap-6 p-10 w-full">
+				<div className="text-center px-5 py-5 bg-[#fee] border border-[#fcc] rounded-xl text-[#c33] max-w-[500px] shadow-md">
 					<strong>Error:</strong> {error}
-				</ErrorMessage>
-			</Container>
+				</div>
+			</div>
 		)
 	}
 
 	if (isLoading || isPolling) {
 		return (
-			<Container>
-				<LoadingMessage>
+			<div className="flex flex-col items-center justify-center gap-6 p-10 w-full">
+				<div className="text-center px-5 py-5 text-muted-foreground">
 					<Spinner size={32} />
-					<p style={{ marginTop: "16px" }}>
+					<p className="mt-4">
 						Waiting for measurement results...
 						<br />
 						<small>Please complete the measurement on your phone</small>
 					</p>
-				</LoadingMessage>
-			</Container>
+				</div>
+			</div>
 		)
 	}
 
@@ -114,16 +53,16 @@ const DesktopResults: React.FC<DesktopResultsProps> = ({
 	const formattedDate = new Date(results.timestamp).toLocaleString()
 
 	return (
-		<Container>
-			<SuccessMessage>
-				<Title>Measurement Complete!</Title>
-				<Subtitle>Your vital signs have been measured successfully.</Subtitle>
-			</SuccessMessage>
-			<ResultsWrapper>
+		<div className="flex flex-col items-center justify-center gap-6 p-10 w-full">
+			<div className="text-center mb-6">
+				<h2 className="text-[28px] font-semibold text-[#333] mb-2">Measurement Complete!</h2>
+				<p className="text-base text-[#666]">Your vital signs have been measured successfully.</p>
+			</div>
+			<div className="w-full max-w-[800px] relative min-h-[400px]">
 				<Stats vitalSigns={results.vitalSigns} />
-			</ResultsWrapper>
-			<Timestamp>Measured at: {formattedDate}</Timestamp>
-		</Container>
+			</div>
+			<div className="text-sm text-[#999] text-center mt-6">Measured at: {formattedDate}</div>
+		</div>
 	)
 }
 

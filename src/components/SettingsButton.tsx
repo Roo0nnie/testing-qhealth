@@ -1,15 +1,7 @@
 import React from "react"
-import styled from "styled-components"
 
 import settings from "../assets/settings-hamburger.svg"
-
-const Img = styled.img<{ disable: boolean }>`
-	height: 17px;
-	width: 22px;
-	margin: 0 8px;
-	padding: 13px;
-	visibility: ${({ disable }) => disable && "hidden"};
-`
+import { cn } from "../lib/utils"
 
 interface SettingsButtonProps {
 	onClick: () => void
@@ -17,7 +9,18 @@ interface SettingsButtonProps {
 }
 
 const SettingsButton = ({ onClick, disable }: SettingsButtonProps) => {
-	return <Img id="settingsButton" disable={disable} src={settings} onClick={onClick} />
+	return (
+		<img
+			id="settingsButton"
+			src={settings}
+			onClick={onClick}
+			className={cn(
+				"h-[17px] w-[22px] mx-2 p-[13px]",
+				disable && "invisible"
+			)}
+			alt="Settings"
+		/>
+	)
 }
 
 export default SettingsButton

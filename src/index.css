@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 45 20% 96%; /* #f5f5f0 */
+		--foreground: 0 0% 18%; /* #2d2d2d */
+		--card: 0 0% 100%; /* #ffffff */
+		--card-foreground: 0 0% 18%; /* #2d2d2d */
+		--popover: 0 0% 100%; /* #ffffff */
+		--popover-foreground: 0 0% 18%; /* #2d2d2d */
+		--primary: 95 53% 18%; /* #2d5016 */
+		--primary-foreground: 0 0% 100%; /* #ffffff */
+		--secondary: 32 32% 45%; /* #8b6f47 */
+		--secondary-foreground: 0 0% 100%; /* #ffffff */
+		--muted: 45 15% 95%; /* #faf9f6 */
+		--muted-foreground: 0 0% 35%; /* #5a5a5a */
+		--accent: 73 59% 33%; /* #6b8e23 */
+		--accent-foreground: 0 0% 100%; /* #ffffff */
+		--destructive: 0 67% 50%; /* #c33 */
+		--destructive-foreground: 0 0% 100%; /* #ffffff */
+		--warning-foreground: 0 0% 18%; /* #2d2d2d */
+		--info-foreground: 0 0% 100%; /* #ffffff */
+		--success-foreground: 0 0% 100%; /* #ffffff */
+		--border: 45 10% 88%; /* #e5e5e0 */
+		--input: 45 10% 88%; /* #e5e5e0 */
+		--ring: 95 53% 18%; /* #2d5016 */
+		--radius: 0.5rem;
+	}
+
+	.dark {
+		--background: 0 0% 10%; /* #1a1a1a */
+		--foreground: 45 20% 96%; /* #f5f5f0 */
+		--card: 0 0% 18%; /* #2d2d2d */
+		--card-foreground: 45 20% 96%; /* #f5f5f0 */
+		--popover: 0 0% 18%; /* #2d2d2d */
+		--popover-foreground: 45 20% 96%; /* #f5f5f0 */
+		--primary: 73 59% 33%; /* #6b8e23 */
+		--primary-foreground: 0 0% 100%; /* #ffffff */
+		--secondary: 32 42% 55%; /* #a68b6b */
+		--secondary-foreground: 0 0% 100%; /* #ffffff */
+		--muted: 0 0% 23%; /* #3a3a3a */
+		--muted-foreground: 0 0% 69%; /* #b0b0b0 */
+		--accent: 73 49% 47%; /* #9ab855 */
+		--accent-foreground: 0 0% 10%; /* #1a1a1a */
+		--destructive: 0 67% 65%; /* #ff6b6b */
+		--destructive-foreground: 0 0% 100%; /* #ffffff */
+		--warning-foreground: 0 0% 10%; /* #1a1a1a */
+		--info-foreground: 0 0% 100%; /* #ffffff */
+		--success-foreground: 0 0% 100%; /* #ffffff */
+		--border: 0 0% 23%; /* #3a3a3a */
+		--input: 0 0% 23%; /* #3a3a3a */
+		--ring: 73 59% 33%; /* #6b8e23 */
+	}
+
+	* {
+		@apply border-border;
+	}
+
+	body {
+		@apply bg-background text-foreground font-primary;
+		margin: 0;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
+	}
+
+	html,
+	body,
+	#root {
+		height: 100%;
+	}
+
+	#root {
+		-webkit-transform: translate3d(0, 0, 0);
+	}
+
+	input {
+		@apply font-primary;
+	}
+
+	input::-webkit-outer-spin-button,
+	input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	input[type="number"] {
+		-moz-appearance: textfield; /* Firefox */
+	}
+
+	button {
+		@apply font-primary;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	p {
+		margin: 0;
+	}
+}
+

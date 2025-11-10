@@ -1,12 +1,15 @@
-import styled, { css } from "styled-components"
+import React from "react"
 
-import { Flex } from "./Flex"
+import { cn } from "../../lib/utils"
 
-export const flexSpace = css`
-	justify-content: space-between;
-	align-items: center;
-`
+interface FlexSpaceProps extends React.HTMLAttributes<HTMLDivElement> {
+	children?: React.ReactNode
+}
 
-export const FlexSpace = styled(Flex)`
-	${flexSpace};
-`
+export const FlexSpace: React.FC<FlexSpaceProps> = ({ children, className, ...props }) => {
+	return (
+		<div className={cn("flex justify-between items-center", className)} {...props}>
+			{children}
+		</div>
+	)
+}

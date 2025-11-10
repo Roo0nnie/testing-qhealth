@@ -1,51 +1,33 @@
 import React from "react"
-import styled from "styled-components"
 
 import { useTheme } from "../context/ThemeContext"
 
-const ToggleContainer = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	cursor: pointer;
-	user-select: none;
-`
-
-const ToggleSwitch = styled.div<{ isDark: boolean }>`
-	position: relative;
-	width: 48px;
-	height: 24px;
-	background-color: ${({ theme, isDark }) =>
-		isDark ? theme.colors.primary.main : theme.colors.border.medium};
-	border-radius: 12px;
-	transition: background-color ${({ theme }) => theme.transitions.normal};
-	cursor: pointer;
-	margin-right: 10px;
-
-	&::after {
-		content: "";
-		position: absolute;
-		top: 2px;
-		left: ${({ isDark }) => (isDark ? "26px" : "2px")};
-		width: 20px;
-		height: 20px;
-		background-color: ${({ theme }) => theme.colors.background.secondary};
-		border-radius: 50%;
-		transition:
-			left ${({ theme }) => theme.transitions.normal},
-			background-color ${({ theme }) => theme.transitions.normal};
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-	}
-`
-
 const ThemeToggle: React.FC = () => {
-	const { themeMode } = useTheme()
+	const { themeMode, setThemeMode } = useTheme()
 	const isDark = themeMode === "dark"
 
+	const toggleTheme = () => {
+		setThemeMode(isDark ? "light" : "dark")
+	}
+
 	return (
-		<ToggleContainer title={`Switch to ${isDark ? "light" : "dark"} mode`}>
-			<ToggleSwitch isDark={isDark} />
-		</ToggleContainer>
+		<div
+			className="flex items-center gap-2 cursor-pointer select-none"
+			onClick={toggleTheme}
+			title={`Switch to ${isDark ? "light" : "dark"} mode`}
+		>
+			<div
+				className={`relative w-12 h-6 rounded-full transition-colors duration-300 cursor-pointer mr-[10px] ${
+					isDark ? "bg-[#6b8e23]" : "bg-[#d4d4d0]"
+				}`}
+			>
+				<div
+					className={`absolute top-0.5 w-5 h-5 bg-card rounded-full transition-all duration-300 shadow-md ${
+						isDark ? "left-[26px]" : "left-0.5"
+					}`}
+				/>
+			</div>
+		</div>
 	)
 }
 

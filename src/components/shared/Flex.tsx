@@ -1,5 +1,15 @@
-import styled from "styled-components"
+import React from "react"
 
-export const Flex = styled.div`
-	display: flex;
-`
+import { cn } from "../../lib/utils"
+
+interface FlexProps extends React.HTMLAttributes<HTMLDivElement> {
+	children?: React.ReactNode
+}
+
+export const Flex: React.FC<FlexProps> = ({ children, className, ...props }) => {
+	return (
+		<div className={cn("flex", className)} {...props}>
+			{children}
+		</div>
+	)
+}

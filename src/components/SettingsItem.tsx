@@ -1,46 +1,7 @@
 import React from "react"
-import styled from "styled-components"
 
+import { cn } from "../lib/utils"
 import PasswordInput from "./PasswordInput"
-
-const Wrapper = styled.div``
-const Title = styled.h3`
-	font-style: normal;
-	font-weight: 500;
-	font-size: 14px;
-	line-height: 19px;
-	color: ${({ theme }) => theme.colors.text.primary};
-	margin-bottom: 6px;
-	transition: color ${({ theme }) => theme.transitions.normal};
-`
-
-const Input = styled.input<{ inValid: boolean }>`
-	padding-left: 10px;
-	box-sizing: border-box;
-	border-radius: ${({ theme }) => theme.borderRadius.md};
-	background-color: ${({ theme }) => theme.colors.background.secondary};
-	width: 340px;
-	height: 36px;
-	color: ${({ theme }) => theme.colors.text.primary};
-	border: 1px solid ${({ theme }) => theme.colors.border.medium};
-	transition: all ${({ theme }) => theme.transitions.normal};
-	font-size: 14px;
-
-	&:focus {
-		border-width: 2px;
-		outline: none;
-		border-color: ${({ theme, inValid }) =>
-			inValid ? theme.colors.status.error : theme.colors.text.link};
-		box-shadow: 0 0 0 3px
-			${({ theme, inValid }) =>
-				inValid ? `${theme.colors.status.error}33` : `${theme.colors.text.link}33`};
-	}
-
-	&:hover {
-		border-color: ${({ theme, inValid }) =>
-			inValid ? theme.colors.status.error : theme.colors.border.dark};
-	}
-`
 
 interface SettingsItemProps {
 	title: string
@@ -60,14 +21,29 @@ const SettingsItem = ({
 	isValid = true,
 }: SettingsItemProps) => {
 	return (
-		<Wrapper>
-			<Title>{title}</Title>
+		<div>
+			<h3 className="font-normal font-medium text-sm leading-[19px] text-foreground mb-1.5 transition-colors duration-300">
+				{title}
+			</h3>
 			{type === "password" ? (
 				<PasswordInput onChange={onChange} onBlur={onBlur} value={value} isValid={isValid} />
 			) : (
-				<Input type={type} onChange={onChange} onBlur={onBlur} value={value} inValid={!isValid} />
+				<input
+					type={type}
+					onChange={onChange}
+					onBlur={onBlur}
+					value={value}
+					className={cn(
+						"pl-[10px] box-border rounded-md bg-card w-[340px] h-9 text-foreground border transition-all duration-300 text-sm",
+						"focus:border-2 focus:outline-none focus:shadow-[0_0_0_3px]",
+						isValid
+							? "border-border-medium focus:border-link focus:shadow-[rgba(74,124,42,0.2)] hover:border-border-dark"
+							: "border-border-medium focus:border-destructive focus:shadow-[rgba(204,51,51,0.2)] hover:border-destructive"
+					)}
+				/>
 			)}
-		</Wrapper>
+		</div>
 	)
 }
+
 export default SettingsItem

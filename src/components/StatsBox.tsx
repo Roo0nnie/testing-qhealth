@@ -1,51 +1,27 @@
 import React from "react"
-import styled from "styled-components"
 
+import { cn } from "../lib/utils"
 import { FlexSpace } from "./shared/FlexSpace"
 
-const Box = styled(FlexSpace)`
-	flex-direction: column;
-	align-items: center;
-	gap: 5px;
-	height: 40px;
-`
+interface StatsBoxProps {
+	title: string
+	value: string | number
+	className?: string
+}
 
-const Title = styled.div`
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	text-align: center;
-	align-items: center;
-	color: ${({ theme }) => theme.colors.text.primary};
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 16px;
-	transition: color ${({ theme }) => theme.transitions.normal};
-`
-
-const Value = styled.div`
-	font-size: 14px;
-	color: ${({ theme }) => theme.colors.primary.main};
-	font-weight: 700;
-	transition: color ${({ theme }) => theme.transitions.normal};
-`
-
-const ValueWrapper = styled.div`
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	align-items: center;
-`
-
-const StatsBox = ({ title, value }: any) => {
+const StatsBox = ({ title, value, className }: StatsBoxProps) => {
 	return (
-		<Box>
-			<Title>{title}</Title>
-			<ValueWrapper>
-				<Value>{value ?? '--'}</Value>
-			</ValueWrapper>
-		</Box>
-	);
-};
+		<FlexSpace className={cn("flex-col items-center gap-[5px] h-[40px]", className)}>
+			<div className="flex flex-col justify-center text-center items-center text-foreground text-sm font-semibold leading-4 transition-colors duration-300">
+				{title}
+			</div>
+			<div className="flex flex-col justify-between items-center">
+				<div className="text-sm text-[#2d5016] font-bold transition-colors duration-300">
+					{value ?? "--"}
+				</div>
+			</div>
+		</FlexSpace>
+	)
+}
 
 export default StatsBox

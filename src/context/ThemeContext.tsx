@@ -1,5 +1,4 @@
-import React, { createContext, ReactNode, useContext, useState } from "react"
-import { ThemeProvider as StyledThemeProvider } from "styled-components"
+import React, { createContext, ReactNode, useContext, useEffect, useState } from "react"
 
 import { lightTheme, Theme } from "../style/theme"
 
@@ -8,6 +7,7 @@ type ThemeMode = "light" | "dark"
 interface ThemeContextType {
 	theme: Theme
 	themeMode: ThemeMode
+	setThemeMode: (mode: ThemeMode) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -25,21 +25,30 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-	// Always use light mode
-	const [themeMode] = useState<ThemeMode>("light")
+	// Always use light mode by default
+	const [themeMode, setThemeModeState] = useState<ThemeMode>("light")
 
-	// Removed localStorage logic since we always use light mode
+	// Apply theme class to document root
+	useEffect(() => {
+		const root = document.documentElement
+		if (themeMode === "dark") {
+			root.classList.add("dark")
+		} else {
+			root.classList.remove("dark")
+		}
+	}, [themeMode])
 
-	const theme = lightTheme // Always use light theme
+	const setThemeMode = (mode: ThemeMode) => {
+		setThemeModeState(mode)
+	}
+
+	const theme = lightTheme // Always use light theme for programmatic access
 
 	const value: ThemeContextType = {
 		theme,
 		themeMode,
+		setThemeMode,
 	}
 
-	return (
-		<ThemeContext.Provider value={value}>
-			<StyledThemeProvider theme={theme}>{children}</StyledThemeProvider>
-		</ThemeContext.Provider>
-	)
+	return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

@@ -1,57 +1,8 @@
 import React from "react"
-import styled from "styled-components"
 
 import Play from "../assets/play-big.svg"
 import Stop from "../assets/stop.svg"
-import media from "../style/media"
 import Spinner from "./Spinner"
-
-const Container = styled.div`
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	height: 58px;
-	width: 58px;
-	${media.tablet`
-    height: 88px;
-    width: 88px;
-  `}
-`
-
-const Button = styled.div`
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: #2d5016;
-	border-radius: 50%;
-	cursor: pointer;
-	height: inherit;
-	width: inherit;
-	transition: all 300ms ease-in-out;
-	box-shadow:
-		0 4px 6px -1px rgba(0, 0, 0, 0.1),
-		0 2px 4px -1px rgba(0, 0, 0, 0.06);
-
-	&:hover {
-		background-color: #4a7c2a;
-		transform: scale(1.05);
-		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
-	}
-
-	&:active {
-		transform: scale(0.95);
-	}
-`
-
-const Icon = styled.img`
-	width: 100%;
-	padding: 52px;
-	${media.tablet`
-    padding: 32px;
-  `}
-`
 
 export interface IStartButton {
 	/**
@@ -70,15 +21,22 @@ export interface IStartButton {
 
 const StartButton = ({ isLoading, onClick, isMeasuring }: IStartButton) => {
 	return (
-		<Container>
+		<div className="flex justify-center items-center h-[58px] w-[58px] md:h-[88px] md:w-[88px]">
 			{isLoading ? (
 				<Spinner />
 			) : (
-				<Button onClick={onClick}>
-					<Icon src={isMeasuring ? Stop : Play} />
-				</Button>
+				<div
+					onClick={onClick}
+					className="flex justify-center items-center bg-[#2d5016] rounded-full cursor-pointer h-full w-full transition-all duration-300 shadow-md hover:bg-[#4a7c2a] hover:scale-105 hover:shadow-lg active:scale-95"
+				>
+					<img
+						src={isMeasuring ? Stop : Play}
+						alt={isMeasuring ? "Stop" : "Play"}
+						className="w-full p-[52px] md:p-8"
+					/>
+				</div>
 			)}
-		</Container>
+		</div>
 	)
 }
 
