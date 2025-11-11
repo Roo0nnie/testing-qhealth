@@ -27,8 +27,6 @@ const useCameras = (): UseCamerasResult => {
 					)
 				}
 
-				// On iOS Safari, we must request camera permissions first
-				// before enumerateDevices() will return proper device information
 				try {
 					// Request camera permission with a temporary stream
 					stream = await navigator.mediaDevices.getUserMedia({ video: true })
