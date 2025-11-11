@@ -15,7 +15,7 @@ const TopBar: React.FC<TopBarProps> = ({ isMeasuring = false, durationSeconds = 
 	const formatSeconds = useCallback((seconds: number) => ("0" + (seconds % 60)).slice(-2), [])
 
 	return (
-		<div className="w-full relative flex justify-between items-center min-h-[60px] z-[2] shadow-md bg-[#2d5016] transition-all duration-300 px-4 md:pl-[100px] md:pr-6">
+		<div className="fixed top-0 left-0 right-0 w-full flex justify-between items-center h-[60px] z-[2] shadow-md bg-[#2d5016] transition-all duration-300 px-4 md:relative md:pl-[100px] md:pr-6">
 			<div className="flex items-center gap-2">
 				<Logo />
 			</div>

@@ -15,15 +15,16 @@ import {
 	useMonitor,
 	usePageVisibility,
 	usePrevious,
+	useTimer,
 	useWarning,
 } from "../hooks"
 import { DEFAULT_MEASUREMENT_DURATION } from "../hooks/useLicenseDetails"
 import { storeResults } from "../services/api"
 import { cn } from "../lib/utils"
 import { VideoReadyState } from "../types"
-import { ErrorAlert, InfoAlert, WarningAlert } from "./alert"
+import { Alert } from "./alert"
+import ResultsModal from "./ResultsModal"
 import StartButton from "./StartButton"
-import Stats from "./Stats"
 import TopBar from "./TopBar"
 import { Spinner } from "./ui/spinner"
 
@@ -65,8 +66,11 @@ const BiosenseSignalMonitor = ({
 	const errorMessage = useError(error)
 	const warningMessage = useWarning(warning)
 	const [hasSentResults, setHasSentResults] = useState(false)
+	const [isResultsModalOpen, setIsResultsModalOpen] = useState(false)
 
 	const isMeasuring = useCallback(() => sessionState === SessionState.MEASURING, [sessionState])
+	const timerSeconds = useTimer(isMeasuring(), processingTime)
+	const prevTimerSeconds = usePrevious(timerSeconds)
 
 	const isVideoReady = useCallback(
 		() => video.current?.readyState === VideoReadyState.HAVE_ENOUGH_DATA,
@@ -141,25 +145,37 @@ const BiosenseSignalMonitor = ({
 		onLicenseStatus(!(error?.code in HealthMonitorCodes))
 	}, [error, onLicenseStatus])
 
+	// Show results modal when timer reaches 0
+	useEffect(() => {
+		if (
+			timerSeconds === 1
+		) {
+			setIsResultsModalOpen(true)
+		}
+	}, [timerSeconds, prevTimerSeconds, vitalSigns])
+
+	const handleCloseModal = useCallback(() => {
+		setIsResultsModalOpen(false)
+	}, [])
+
 	const mobile = useMemo(() => isMobile(), [])
 	const desktop = useMemo(() => !isTablet() && !isMobile(), [])
 
 	return (
 		<>
 			<TopBar isMeasuring={isMeasuring()} durationSeconds={processingTime} />
-			<div className="flex flex-col w-full justify-start items-center flex-1 md:w-fit md:justify-center">
+			<div className="flex flex-col w-full justify-start items-center flex-1 overflow-hidden pt-[60px] md:w-fit md:justify-center md:pt-0 md:h-[calc(100vh-60px)]">
 				<div
 					className={cn(
-						"w-auto flex flex-col justify-start items-center",
-						mobile && "h-full my-10 mb-[60px] sm:my-10 sm:mb-[60px]"
+						"w-full flex flex-col justify-start items-center h-full overflow-hidden",
+						mobile && "h-[calc(100vh-60px)]"
 					)}
 				>
 					<div
 						className={cn(
-							"relative flex justify-center w-full",
-							mobile && "h-full",
-							"md:w-[812px] md:h-[609px]",
-							"xl:w-[1016px] xl:h-[762px]"
+							"relative flex justify-center w-full h-full",
+							"md:w-[812px]",
+							"xl:w-[1016px]"
 						)}
 					>
 						<div className="w-full h-full -z-10">
@@ -183,11 +199,7 @@ const BiosenseSignalMonitor = ({
 								)}
 							/>
 						</div>
-						{(isMeasuring() ? !errorMessage && !warningMessage : !errorMessage) &&
-							isMeasurementEnabled && <Stats vitalSigns={vitalSigns} />}
-						<ErrorAlert message={errorMessage} />
-						{isMeasuring() && <WarningAlert message={warningMessage} />}
-						{isMeasuring() && <InfoAlert message={info.message} />}
+						<Alert error={errorMessage} warning={isMeasuring() ? warningMessage : undefined} info={isMeasuring() ? info.message : undefined} />
 						{!isVideoReady() && licenseKey && (
 							<div className="absolute top-0 left-0 w-full h-full flex justify-center items-center z-[2] bg-background">
 								<Spinner size={48} />
@@ -197,9 +209,9 @@ const BiosenseSignalMonitor = ({
 					{isVideoReady() && (
 						<div
 							className={cn(
-								"flex-[2] z-[3] w-full flex flex-col justify-start items-center -mt-[30px]",
-								"sm:mt-[50px]",
-								"md:p-0 md:h-auto md:w-auto md:absolute md:right-0 md:bottom-[42%] md:mr-[60px] md:mt-0"
+								"absolute bottom-[70px] left-1/2 -translate-x-1/2 z-[3]",
+								"flex items-center justify-center",
+								"md:left-auto md:right-[60px] md:translate-x-0 md:bottom-[70px]"
 							)}
 						>
 							<StartButton
@@ -211,6 +223,11 @@ const BiosenseSignalMonitor = ({
 					)}
 				</div>
 			</div>
+			<ResultsModal
+				isOpen={isResultsModalOpen}
+				vitalSigns={vitalSigns || null}
+				onClose={handleCloseModal}
+			/>
 		</>
 	)
 }

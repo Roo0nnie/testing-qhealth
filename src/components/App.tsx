@@ -6,6 +6,7 @@ import useSession from "../hooks/useSession"
 import BiosenseSignalMonitor from "./BiosenseSignalMonitor"
 import DesktopFallback from "./DesktopFallback"
 import { Spinner } from "./ui/spinner"
+import { Toaster } from "./ui/sonner"
 
 const App = () => {
 	const { isDesktop } = useDeviceDetection()
@@ -16,7 +17,6 @@ const App = () => {
 	const [hasTimedOut, setHasTimedOut] = useState(false)
 	useDisableZoom()
 
-	// Desktop: Show QR code fallback
 	if (isDesktop && session) {
 		return <DesktopFallback sessionId={session.sessionId} />
 	}
@@ -30,7 +30,6 @@ const App = () => {
 		setCameraId(cameras[0]?.deviceId)
 	}, [cameras])
 
-	// Timeout handling - show error if camera setup takes too long
 	useEffect(() => {
 		if (isCameraLoading && !cameraError) {
 			const timeout = setTimeout(() => {
@@ -39,17 +38,12 @@ const App = () => {
 
 			return () => clearTimeout(timeout)
 		} else if (!isCameraLoading) {
-			// Reset timeout state when camera finishes loading (successfully or with error)
 			setHasTimedOut(false)
 		}
 	}, [isCameraLoading, cameraError])
-
-	// Show error if camera setup failed
-	// Only show timeout error if we're still loading after timeout
 	if (cameraError) {
 		const errorMessage = cameraError
 
-		// Check if user is on iOS Safari for specific instructions
 		const isIosSafari =
 			/iPad|iPhone|iPod/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS/.test(navigator.userAgent)
 
@@ -75,7 +69,6 @@ const App = () => {
 		)
 	}
 
-	// Show loading indicator when camera is being set up
 	if (isCameraLoading || !cameraId || cameras.length === 0) {
 		return (
 			<div className="relative flex h-full w-full flex-col items-center justify-start">
@@ -93,13 +86,14 @@ const App = () => {
 	}
 
 	return (
-		<div className="relative flex h-full w-full flex-col items-center justify-start">
+		<div className="relative flex h-screen w-full flex-col items-center justify-start overflow-hidden max-h-screen">
 			<BiosenseSignalMonitor
 				showMonitor={true}
 				cameraId={cameraId}
 				onLicenseStatus={updateLicenseStatus}
 				sessionId={session?.sessionId}
 			/>
+			<Toaster />
 		</div>
 	)
 }

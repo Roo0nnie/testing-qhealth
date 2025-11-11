@@ -7,7 +7,7 @@ import "./index.css"
 
 ReactDOM.render(
 	<ThemeProvider>
-		<div className="w-full h-full">
+		<div className="w-full h-full overflow-hidden">
 			<App />
 		</div>
 	</ThemeProvider>,
