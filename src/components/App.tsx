@@ -17,6 +17,7 @@ const App = () => {
 	const [cameraId, setCameraId] = useState<string>()
 	const [isLicenseValid, setIsLicenseValid] = useState(false)
 	const [hasTimedOut, setHasTimedOut] = useState(false)
+	const [isRetryingPermission, setIsRetryingPermission] = useState(false)
 	useDisableZoom()
 
 
@@ -64,6 +65,39 @@ const App = () => {
 		setIsLicenseValid(valid)
 	}
 
+	const handleRetryCameraPermission = async () => {
+		try {
+			setIsRetryingPermission(true)
+
+			// Check if mediaDevices API is available
+			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+				console.error("Camera access is not supported in this browser")
+				// Still refresh to show the error message again
+				window.location.reload()
+				return
+			}
+
+			// Request camera permission
+			try {
+				const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+				// Stop the stream immediately - we only needed it to get permission
+				stream.getTracks().forEach(track => track.stop())
+			} catch (permissionError: any) {
+				// Permission was denied or error occurred
+				// Still refresh the page to show updated state
+				console.log("Permission request result:", permissionError.name)
+			}
+
+			// Refresh the page after permission request (whether granted or denied)
+			// This will reload the camera setup with the new permission state
+			window.location.reload()
+		} catch (err) {
+			console.error("Error retrying camera permission:", err)
+			// Refresh anyway to reset state
+			window.location.reload()
+		}
+	}
+
 	useEffect(() => {
 		if (!cameras?.length) return
 		setCameraId(cameras[0]?.deviceId)
@@ -103,6 +137,13 @@ const App = () => {
 					<p className="text-foreground m-0 text-sm opacity-80">
 						Please refresh the page after granting camera permissions.
 					</p>
+					<button
+						onClick={handleRetryCameraPermission}
+						disabled={isRetryingPermission}
+						className="mt-2 px-6 py-3 bg-[#2d5016] text-white rounded-lg font-semibold text-base transition-all duration-300 shadow-md hover:bg-[#4a7c2a] hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+					>
+						{isRetryingPermission ? "Requesting Permission..." : "Allow Camera & Refresh"}
+					</button>
 				</div>
 			</div>
 		)
