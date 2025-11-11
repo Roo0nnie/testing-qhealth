@@ -19,11 +19,12 @@ import {
 	useWarning,
 } from "../hooks"
 import { DEFAULT_MEASUREMENT_DURATION } from "../hooks/useLicenseDetails"
-import { storeResults } from "../services/api"
 import { cn } from "../lib/utils"
-import { VideoReadyState } from "../types"
-import { Alert } from "./alert"
 import ResultsModal from "./ResultsModal"
+import { Alert } from "./alert"
+import { getQHealthAPI } from "../services/qhealthClientAPI"
+import { MeasurementResults, VideoReadyState } from "../types"
+import { SessionStatus } from "../types/api"
 import StartButton from "./StartButton"
 import TopBar from "./TopBar"
 import { Spinner } from "./ui/spinner"
@@ -82,11 +83,23 @@ const BiosenseSignalMonitor = ({
 		if (sessionState === SessionState.ACTIVE) {
 			setStartMeasuring(true)
 			setLoadingTimeoutPromise(window.setTimeout(() => setIsLoading(true), processingTime * 1000))
+
+			
+			if (sessionId) {
+				const api = getQHealthAPI()
+				api.broadcastEvent("MEASUREMENT_STARTED", {
+					sessionId,
+					timestamp: Date.now(),
+				})
+				api.updateSessionStatus(sessionId, SessionStatus.MEASURING).catch(err => {
+					console.error("Failed to update session status:", err)
+				})
+			}
 		} else if (isMeasuring()) {
 			clearTimeout(loadingTimeoutPromise)
 			setStartMeasuring(false)
 		}
-	}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise])
+	}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise, sessionId])
 
 	// Send results to API when measurement completes on mobile with session ID
 	useEffect(() => {
@@ -103,15 +116,27 @@ const BiosenseSignalMonitor = ({
 			}
 
 			try {
-				const result = await storeResults(sessionId, vitalSigns)
-				if (result.success) {
-					setHasSentResults(true)
-					console.log("Results sent successfully to API")
-				} else {
-					console.error("Failed to send results:", result.error)
+				// Store results via QHealth API (handles storage + broadcasting)
+				const api = getQHealthAPI()
+				const measurementResults: MeasurementResults = {
+					sessionId,
+					vitalSigns,
+					timestamp: Date.now(),
 				}
+
+				await api.storeMeasurementResults(sessionId, measurementResults)
+				await api.updateSessionStatus(sessionId, SessionStatus.COMPLETED)
+				setHasSentResults(true)
+				console.log("Results stored successfully")
 			} catch (err) {
-				console.error("Error sending results to API:", err)
+				console.error("Error storing results:", err)
+
+				// Broadcast error event
+				const api = getQHealthAPI()
+				api.broadcastEvent("ERROR", {
+					code: "STORAGE_ERROR",
+					message: err instanceof Error ? err.message : "Failed to store results",
+				})
 			}
 		}
 
@@ -123,6 +148,18 @@ const BiosenseSignalMonitor = ({
 			setIsLoading(false)
 			if (errorMessage) {
 				setIsMeasurementEnabled(false)
+				// Broadcast MEASUREMENT_FAILED event on error
+				if (sessionId) {
+					const api = getQHealthAPI()
+					api.broadcastEvent("MEASUREMENT_FAILED", {
+						sessionId,
+						error: errorMessage,
+						timestamp: Date.now(),
+					})
+					api.updateSessionStatus(sessionId, SessionStatus.FAILED).catch(err => {
+						console.error("Failed to update session status:", err)
+					})
+				}
 			} else {
 				setIsMeasurementEnabled(true)
 			}
@@ -139,7 +176,7 @@ const BiosenseSignalMonitor = ({
 			setStartMeasuring(false)
 			setIsLoading(false)
 		}
-	}, [errorMessage, sessionState, isPageVisible, isMeasuring, prevSessionState])
+	}, [errorMessage, sessionState, isPageVisible, isMeasuring, prevSessionState, sessionId])
 
 	useEffect(() => {
 		onLicenseStatus(!(error?.code in HealthMonitorCodes))
@@ -164,26 +201,30 @@ const BiosenseSignalMonitor = ({
 	return (
 		<>
 			<TopBar isMeasuring={isMeasuring()} durationSeconds={processingTime} />
+
 			<div className="flex flex-col w-full justify-start items-center flex-1 overflow-hidden pt-[60px] md:w-fit md:justify-center md:pt-0 md:h-[calc(100vh-60px)]">
 				<div
 					className={cn(
 						"w-full flex flex-col justify-start items-center h-full overflow-hidden",
 						mobile && "h-[calc(100vh-60px)]"
+
 					)}
 				>
 					<div
 						className={cn(
+
 							"relative flex justify-center w-full h-full",
 							"md:w-[812px]",
 							"xl:w-[1016px]"
+
 						)}
 					>
-						<div className="w-full h-full -z-10">
+						<div className="-z-10 h-full w-full">
 							<img
 								src={Mask}
 								alt=""
 								className={cn(
-									"absolute w-full h-full z-[1] transition-opacity duration-300",
+									"absolute z-[1] h-full w-full transition-opacity duration-300",
 									desktop ? "object-contain" : "object-cover",
 									isVideoReady() ? "opacity-100" : "opacity-0"
 								)}
@@ -194,14 +235,14 @@ const BiosenseSignalMonitor = ({
 								muted={true}
 								playsInline={true}
 								className={cn(
-									"w-full h-full object-cover scale-x-[-1] bg-background transition-opacity duration-300",
+									"bg-background h-full w-full scale-x-[-1] object-cover transition-opacity duration-300",
 									isVideoReady() ? "opacity-100" : "opacity-0"
 								)}
 							/>
 						</div>
 						<Alert error={errorMessage} warning={isMeasuring() ? warningMessage : undefined} info={isMeasuring() ? info.message : undefined} />
 						{!isVideoReady() && licenseKey && (
-							<div className="absolute top-0 left-0 w-full h-full flex justify-center items-center z-[2] bg-background">
+							<div className="bg-background absolute left-0 top-0 z-[2] flex h-full w-full items-center justify-center">
 								<Spinner size={48} />
 							</div>
 						)}
@@ -209,9 +250,11 @@ const BiosenseSignalMonitor = ({
 					{isVideoReady() && (
 						<div
 							className={cn(
+
 								"absolute bottom-[70px] left-1/2 -translate-x-1/2 z-[3]",
 								"flex items-center justify-center",
 								"md:left-auto md:right-[60px] md:translate-x-0 md:bottom-[70px]"
+
 							)}
 						>
 							<StartButton

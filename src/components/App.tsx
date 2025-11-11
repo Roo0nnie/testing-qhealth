@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react"
 import { useCameras, useDisableZoom } from "../hooks"
 import useDeviceDetection from "../hooks/useDeviceDetection"
 import useSession from "../hooks/useSession"
+import { getQHealthAPI, initializeAPIFromURL } from "../services/qhealthClientAPI"
+import { SessionStatus } from "../types/api"
 import BiosenseSignalMonitor from "./BiosenseSignalMonitor"
 import DesktopFallback from "./DesktopFallback"
 import { Spinner } from "./ui/spinner"
@@ -16,6 +18,43 @@ const App = () => {
 	const [isLicenseValid, setIsLicenseValid] = useState(false)
 	const [hasTimedOut, setHasTimedOut] = useState(false)
 	useDisableZoom()
+
+
+	// Initialize QHealth Client API (only once)
+	useEffect(() => {
+		// Initialize API from URL parameters
+		initializeAPIFromURL()
+	}, [])
+
+	// Update session info when session changes
+	useEffect(() => {
+		if (session) {
+			const api = getQHealthAPI()
+			api.setSessionInfo({
+				sessionId: session.sessionId,
+				status: SessionStatus.ACTIVE,
+				createdAt: session.createdAt,
+				measurementCount: 0,
+				expiresAt: session.createdAt + 60 * 60 * 1000, // 1 hour
+			})
+
+			// Update session info in adapter
+			api
+				.updateSessionStatus(session.sessionId, SessionStatus.ACTIVE, {
+					createdAt: session.createdAt,
+					expiresAt: session.createdAt + 60 * 60 * 1000,
+				})
+				.catch(err => {
+					console.error("Failed to update session info:", err)
+				})
+
+			// Broadcast SESSION_CREATED event
+			api.broadcastEvent("SESSION_CREATED", {
+				sessionId: session.sessionId,
+				createdAt: session.createdAt,
+			})
+		}
+	}, [session])
 
 	if (isDesktop && session) {
 		return <DesktopFallback sessionId={session.sessionId} />
