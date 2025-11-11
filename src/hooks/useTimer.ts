@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react"
 
 const useTimer = (started: boolean, durationSeconds: number) => {
-	const [seconds, setSeconds] = useState(1)
+	const [seconds, setSeconds] = useState(durationSeconds)
 
 	useEffect(() => {
 		if (started) {
-			setSeconds(1)
+			setSeconds(durationSeconds)
 			const intervalId = setInterval(() => {
 				setSeconds(seconds => {
-					if (seconds >= durationSeconds - 1) {
+					if (seconds <= 1) {
 						clearInterval(intervalId)
-						return durationSeconds
+						return 0
 					}
-					return seconds + 1
+					return seconds - 1
 				})
 			}, 1000)
 
@@ -20,7 +20,7 @@ const useTimer = (started: boolean, durationSeconds: number) => {
 				clearInterval(intervalId)
 			}
 		} else {
-			setSeconds(1)
+			setSeconds(durationSeconds)
 		}
 	}, [started, durationSeconds])
 

@@ -15,16 +15,17 @@ import {
 	useMonitor,
 	usePageVisibility,
 	usePrevious,
+	useTimer,
 	useWarning,
 } from "../hooks"
 import { DEFAULT_MEASUREMENT_DURATION } from "../hooks/useLicenseDetails"
 import { cn } from "../lib/utils"
+import ResultsModal from "./ResultsModal"
+import { Alert } from "./alert"
 import { getQHealthAPI } from "../services/qhealthClientAPI"
 import { MeasurementResults, VideoReadyState } from "../types"
 import { SessionStatus } from "../types/api"
-import { ErrorAlert, InfoAlert, WarningAlert } from "./alert"
 import StartButton from "./StartButton"
-import Stats from "./Stats"
 import TopBar from "./TopBar"
 import { Spinner } from "./ui/spinner"
 
@@ -66,8 +67,11 @@ const BiosenseSignalMonitor = ({
 	const errorMessage = useError(error)
 	const warningMessage = useWarning(warning)
 	const [hasSentResults, setHasSentResults] = useState(false)
+	const [isResultsModalOpen, setIsResultsModalOpen] = useState(false)
 
 	const isMeasuring = useCallback(() => sessionState === SessionState.MEASURING, [sessionState])
+	const timerSeconds = useTimer(isMeasuring(), processingTime)
+	const prevTimerSeconds = usePrevious(timerSeconds)
 
 	const isVideoReady = useCallback(
 		() => video.current?.readyState === VideoReadyState.HAVE_ENOUGH_DATA,
@@ -80,7 +84,7 @@ const BiosenseSignalMonitor = ({
 			setStartMeasuring(true)
 			setLoadingTimeoutPromise(window.setTimeout(() => setIsLoading(true), processingTime * 1000))
 
-			// Broadcast MEASUREMENT_STARTED event
+			
 			if (sessionId) {
 				const api = getQHealthAPI()
 				api.broadcastEvent("MEASUREMENT_STARTED", {
@@ -178,25 +182,41 @@ const BiosenseSignalMonitor = ({
 		onLicenseStatus(!(error?.code in HealthMonitorCodes))
 	}, [error, onLicenseStatus])
 
+	// Show results modal when timer reaches 0
+	useEffect(() => {
+		if (
+			timerSeconds === 1
+		) {
+			setIsResultsModalOpen(true)
+		}
+	}, [timerSeconds, prevTimerSeconds, vitalSigns])
+
+	const handleCloseModal = useCallback(() => {
+		setIsResultsModalOpen(false)
+	}, [])
+
 	const mobile = useMemo(() => isMobile(), [])
 	const desktop = useMemo(() => !isTablet() && !isMobile(), [])
 
 	return (
 		<>
 			<TopBar isMeasuring={isMeasuring()} durationSeconds={processingTime} />
-			<div className="flex w-full flex-1 flex-col items-center justify-start md:w-fit md:justify-center">
+
+			<div className="flex flex-col w-full justify-start items-center flex-1 overflow-hidden pt-[60px] md:w-fit md:justify-center md:pt-0 md:h-[calc(100vh-60px)]">
 				<div
 					className={cn(
-						"flex w-auto flex-col items-center justify-start",
-						mobile && "my-10 mb-[60px] h-full sm:my-10 sm:mb-[60px]"
+						"w-full flex flex-col justify-start items-center h-full overflow-hidden",
+						mobile && "h-[calc(100vh-60px)]"
+
 					)}
 				>
 					<div
 						className={cn(
-							"relative flex w-full justify-center",
-							mobile && "h-full",
-							"md:h-[609px] md:w-[812px]",
-							"xl:h-[762px] xl:w-[1016px]"
+
+							"relative flex justify-center w-full h-full",
+							"md:w-[812px]",
+							"xl:w-[1016px]"
+
 						)}
 					>
 						<div className="-z-10 h-full w-full">
@@ -220,11 +240,7 @@ const BiosenseSignalMonitor = ({
 								)}
 							/>
 						</div>
-						{(isMeasuring() ? !errorMessage && !warningMessage : !errorMessage) &&
-							isMeasurementEnabled && <Stats vitalSigns={vitalSigns} />}
-						<ErrorAlert message={errorMessage} />
-						{isMeasuring() && <WarningAlert message={warningMessage} />}
-						{isMeasuring() && <InfoAlert message={info.message} />}
+						<Alert error={errorMessage} warning={isMeasuring() ? warningMessage : undefined} info={isMeasuring() ? info.message : undefined} />
 						{!isVideoReady() && licenseKey && (
 							<div className="bg-background absolute left-0 top-0 z-[2] flex h-full w-full items-center justify-center">
 								<Spinner size={48} />
@@ -234,9 +250,11 @@ const BiosenseSignalMonitor = ({
 					{isVideoReady() && (
 						<div
 							className={cn(
-								"z-[3] -mt-[30px] flex w-full flex-[2] flex-col items-center justify-start",
-								"sm:mt-[50px]",
-								"md:absolute md:bottom-[42%] md:right-0 md:mr-[60px] md:mt-0 md:h-auto md:w-auto md:p-0"
+
+								"absolute bottom-[70px] left-1/2 -translate-x-1/2 z-[3]",
+								"flex items-center justify-center",
+								"md:left-auto md:right-[60px] md:translate-x-0 md:bottom-[70px]"
+
 							)}
 						>
 							<StartButton
@@ -248,6 +266,11 @@ const BiosenseSignalMonitor = ({
 					)}
 				</div>
 			</div>
+			<ResultsModal
+				isOpen={isResultsModalOpen}
+				vitalSigns={vitalSigns || null}
+				onClose={handleCloseModal}
+			/>
 		</>
 	)
 }

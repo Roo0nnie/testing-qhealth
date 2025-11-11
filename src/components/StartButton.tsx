@@ -5,17 +5,8 @@ import Stop from "../assets/stop.svg"
 import Spinner from "./Spinner"
 
 export interface IStartButton {
-	/**
-	 *  Displays a spinner when isLoading is true
-	 */
 	isLoading: boolean
-	/**
-	 *  function triggered on button click
-	 */
 	onClick: () => void
-	/**
-	 *  Displays whether the current session state is measuring
-	 */
 	isMeasuring: boolean
 }
 
@@ -32,7 +23,7 @@ const StartButton = ({ isLoading, onClick, isMeasuring }: IStartButton) => {
 					<img
 						src={isMeasuring ? Stop : Play}
 						alt={isMeasuring ? "Stop" : "Play"}
-						className="w-full p-[52px] md:p-8"
+						className="w-1/2 h-1/2 object-contain"
 					/>
 				</div>
 			)}

@@ -68,8 +68,12 @@ function common() {
 				}),
 		target: "web",
 		resolve: {
-			extensions: [".ts", ".tsx", ".js", ".jsx"],
+			extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs"],
 			modules: [paths.src, paths.node_modules],
+			alias: {
+				"react/jsx-runtime": path.resolve(paths.node_modules, "react/jsx-runtime.js"),
+				"react/jsx-dev-runtime": path.resolve(paths.node_modules, "react/jsx-dev-runtime.js"),
+			},
 			fallback: {
 				"url": require.resolve("url/"),
 				"events": require.resolve("events/"),
@@ -81,6 +85,13 @@ function common() {
 		experiments: { asyncWebAssembly: true },
 		module: {
 			rules: [
+				{
+					test: /\.mjs$/,
+					type: "javascript/auto",
+					resolve: {
+						fullySpecified: false,
+					},
+				},
 				{
 					test: /\.tsx?$/,
 					loader: "ts-loader",
