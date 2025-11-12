@@ -97,7 +97,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	// This ensures the API always receives a consistent structure with all 31+ fields
 	const scanResult: Record<string, any> = {
 		// Basic Vital Signs
-		heart_rate: null,
+		pulseRate: null,
 		respiration_rate: null,
 		spo2: null,
 		blood_pressure_systolic: null,
@@ -161,7 +161,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 
 	// Basic Vital Signs
 	const pulseRate = getValue(vitalSigns.pulseRate)
-	scanResult.heart_rate = pulseRate
+	scanResult.pulseRate = pulseRate
 
 	const respirationRate = getValue(vitalSigns.respirationRate)
 	scanResult.respiration_rate = respirationRate
@@ -170,10 +170,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	scanResult.spo2 = spo2
 
 	const bloodPressure = getValue(vitalSigns.bloodPressure)
-	if (bloodPressure !== null) {
-		scanResult.blood_pressure_systolic = bloodPressure.systolic
-		scanResult.blood_pressure_diastolic = bloodPressure.diastolic
-	}
+		scanResult.blood_pressure = bloodPressure
 
 	// HRV Metrics
 	const sdnn = getValue(vitalSigns.sdnn)
