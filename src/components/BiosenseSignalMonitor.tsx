@@ -23,6 +23,7 @@ import { cn } from "../lib/utils"
 import ResultsModal from "./ResultsModal"
 import { Alert } from "./alert"
 import { getQHealthAPI } from "../services/qhealthClientAPI"
+import { sendResultsToGaleAPI } from "../services/galeExternalAPI"
 import { MeasurementResults, VideoReadyState } from "../types"
 import { SessionStatus } from "../types/api"
 import StartButton from "./StartButton"
@@ -82,6 +83,9 @@ const BiosenseSignalMonitor = ({
 		setIsLoading(true)
 		if (sessionState === SessionState.ACTIVE) {
 			setStartMeasuring(true)
+			// CRITICAL: Reset hasSentResults when starting a new measurement
+			setHasSentResults(false)
+			console.log("🔄 Starting new measurement, reset hasSentResults to false")
 			setLoadingTimeoutPromise(window.setTimeout(() => setIsLoading(true), processingTime * 1000))
 
 			
@@ -101,47 +105,104 @@ const BiosenseSignalMonitor = ({
 		}
 	}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise, sessionId])
 
-	// Send results to API when measurement completes on mobile with session ID
+	// Reset hasSentResults when sessionId changes (new measurement session)
 	useEffect(() => {
-		const sendResultsToAPI = async () => {
-			if (
-				!isMobile() ||
-				!sessionId ||
-				sessionState !== SessionState.TERMINATED ||
-				prevSessionState !== SessionState.MEASURING ||
-				!vitalSigns ||
-				hasSentResults
-			) {
-				return
+		console.log("🔄 Session ID changed, resetting hasSentResults", { sessionId, hasSentResults })
+		setHasSentResults(false)
+	}, [sessionId])
+
+	// IMPROVED: Send results to GALE API when timer reaches 0 (measurement complete)
+	useEffect(() => {
+		console.log("🎯 Checking send conditions...", {
+			timerSeconds,
+			prevTimerSeconds,
+			hasVitalSigns: !!vitalSigns,
+			hasSessionId: !!sessionId,
+			hasSentResults,
+		})
+
+		// More robust condition - trigger when timer reaches 0 or 1
+		const shouldSendResults = 
+			(timerSeconds === 0 || timerSeconds === 1) &&
+			prevTimerSeconds !== undefined &&
+			prevTimerSeconds > timerSeconds && // Ensure timer is actually counting down
+			vitalSigns &&
+			sessionId &&
+			!hasSentResults
+
+		if (shouldSendResults) {
+			console.log("⏱️ Timer reached target! Sending vitalSigns to GALE API...")
+			console.log("📤 vitalSigns to be sent to API endpoint:", vitalSigns)
+
+			const sendResultsToAPI = async () => {
+				try {
+					const api = getQHealthAPI()
+					const measurementResults: MeasurementResults = {
+						sessionId,
+						vitalSigns,
+						timestamp: Date.now(),
+					}
+
+					console.log("📦 Prepared measurement results for GALE API:", {
+						sessionId: measurementResults.sessionId,
+						timestamp: measurementResults.timestamp,
+						vitalSignsKeys: Object.keys(measurementResults.vitalSigns),
+						vitalSigns: measurementResults.vitalSigns,
+					})
+
+					// Mark as sent immediately to prevent duplicate sends
+					setHasSentResults(true)
+					console.log("✅ Results prepared successfully, sending to GALE API...")
+
+					// Send results to GALE External API (fire-and-forget, non-blocking)
+					sendResultsToGaleAPI(measurementResults)
+						.then(result => {
+							if (result.success) {
+								console.log("✅ GALE API submission completed successfully", {
+									sessionId: measurementResults.sessionId,
+									result,
+								})
+							} else {
+								console.warn("⚠️ GALE API submission failed (non-blocking):", {
+									sessionId: measurementResults.sessionId,
+									error: result.error,
+									result,
+								})
+							}
+						})
+						.catch(galeError => {
+							console.error("❌ GALE API submission error (non-blocking):", {
+								sessionId: measurementResults.sessionId,
+								error: galeError,
+							})
+						})
+				} catch (err) {
+					console.error("❌ Error preparing results for GALE API:", err)
+
+					// Broadcast error event
+					const api = getQHealthAPI()
+					api.broadcastEvent("ERROR", {
+						code: "STORAGE_ERROR",
+						message: err instanceof Error ? err.message : "Failed to prepare results",
+					})
+				}
 			}
 
-			try {
-				// Store results via QHealth API (handles storage + broadcasting)
-				const api = getQHealthAPI()
-				const measurementResults: MeasurementResults = {
-					sessionId,
-					vitalSigns,
-					timestamp: Date.now(),
-				}
-
-				await api.storeMeasurementResults(sessionId, measurementResults)
-				await api.updateSessionStatus(sessionId, SessionStatus.COMPLETED)
-				setHasSentResults(true)
-				console.log("Results stored successfully")
-			} catch (err) {
-				console.error("Error storing results:", err)
-
-				// Broadcast error event
-				const api = getQHealthAPI()
-				api.broadcastEvent("ERROR", {
-					code: "STORAGE_ERROR",
-					message: err instanceof Error ? err.message : "Failed to store results",
+			sendResultsToAPI()
+		} else {
+			// Log why condition wasn't met
+			if (timerSeconds <= 1 && !shouldSendResults) {
+				console.log("❌ Send condition NOT met:", {
+					timerSeconds,
+					prevTimerSeconds,
+					"prevTimerSeconds > timerSeconds": prevTimerSeconds !== undefined && prevTimerSeconds > timerSeconds,
+					hasVitalSigns: !!vitalSigns,
+					hasSessionId: !!sessionId,
+					hasSentResults,
 				})
 			}
 		}
-
-		sendResultsToAPI()
-	}, [sessionState, prevSessionState, sessionId, vitalSigns, hasSentResults])
+	}, [timerSeconds, prevTimerSeconds, vitalSigns, sessionId, hasSentResults])
 
 	useEffect(() => {
 		if (isMeasuring()) {
@@ -184,12 +245,10 @@ const BiosenseSignalMonitor = ({
 
 	// Show results modal when timer reaches 0
 	useEffect(() => {
-		if (
-			timerSeconds === 1
-		) {
+		if (timerSeconds === 1) {
 			setIsResultsModalOpen(true)
 		}
-	}, [timerSeconds, prevTimerSeconds, vitalSigns])
+	}, [timerSeconds])
 
 	const handleCloseModal = useCallback(() => {
 		setIsResultsModalOpen(false)
@@ -207,16 +266,13 @@ const BiosenseSignalMonitor = ({
 					className={cn(
 						"w-full flex flex-col justify-start items-center h-full overflow-hidden",
 						mobile && "h-[calc(100vh-60px)]"
-
 					)}
 				>
 					<div
 						className={cn(
-
 							"relative flex justify-center w-full h-full",
 							"md:w-[812px]",
 							"xl:w-[1016px]"
-
 						)}
 					>
 						<div className="-z-10 h-full w-full">
@@ -250,11 +306,9 @@ const BiosenseSignalMonitor = ({
 					{isVideoReady() && (
 						<div
 							className={cn(
-
 								"absolute bottom-[70px] left-1/2 -translate-x-1/2 z-[3]",
 								"flex items-center justify-center",
 								"md:left-auto md:right-[60px] md:translate-x-0 md:bottom-[70px]"
-
 							)}
 						>
 							<StartButton

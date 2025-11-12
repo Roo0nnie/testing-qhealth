@@ -32,6 +32,45 @@ function common() {
 		} catch (error) {}
 	}
 
+	// Read GALE API environment variables from .env file
+	let galeApiBaseURL = process.env.GALE_API_BASE_URL
+	let galeApiKey = process.env.GALE_API_KEY
+	let galeSystemName = process.env.GALE_SCAN_SOURCE_SYSTEM_NAME || "QHealth System"
+	let galePublisher = process.env.GALE_SCAN_SOURCE_PUBLISHER || "QHealth"
+	let galeApiEnabled = process.env.GALE_API_ENABLED !== "false" // Default to true if not set
+
+	// Fallback: read from .env file directly if not in process.env
+	if (!galeApiBaseURL || !galeApiKey) {
+		try {
+			const envPath = path.resolve(__dirname, ".env")
+			const envFile = fs.readFileSync(envPath, "utf8")
+			if (!galeApiBaseURL) {
+				const match = envFile.match(/^GALE_API_BASE_URL=(.+)$/m)
+				if (match) {
+					galeApiBaseURL = match[1].trim()
+				}
+			}
+			if (!galeApiKey) {
+				const match = envFile.match(/^GALE_API_KEY=(.+)$/m)
+				if (match) {
+					galeApiKey = match[1].trim()
+				}
+			}
+			const systemNameMatch = envFile.match(/^GALE_SCAN_SOURCE_SYSTEM_NAME=(.+)$/m)
+			if (systemNameMatch) {
+				galeSystemName = systemNameMatch[1].trim()
+			}
+			const publisherMatch = envFile.match(/^GALE_SCAN_SOURCE_PUBLISHER=(.+)$/m)
+			if (publisherMatch) {
+				galePublisher = publisherMatch[1].trim()
+			}
+			const enabledMatch = envFile.match(/^GALE_API_ENABLED=(.+)$/m)
+			if (enabledMatch) {
+				galeApiEnabled = enabledMatch[1].trim() !== "false"
+			}
+		} catch (error) {}
+	}
+
 	// Debug: Log the license key status (masked for security)
 	if (licenseKey) {
 		const maskedKey =
@@ -137,11 +176,19 @@ function common() {
 			}),
 			new webpack.DefinePlugin({
 				"process.env.LICENSE_KEY": JSON.stringify(licenseKey || ""),
+				"process.env.GALE_API_BASE_URL": JSON.stringify(galeApiBaseURL || ""),
+				"process.env.GALE_API_KEY": JSON.stringify(galeApiKey || ""),
+				"process.env.GALE_SCAN_SOURCE_SYSTEM_NAME": JSON.stringify(galeSystemName || "QHealth System"),
+				"process.env.GALE_SCAN_SOURCE_PUBLISHER": JSON.stringify(galePublisher || "QHealth"),
+				"process.env.GALE_API_ENABLED": JSON.stringify(galeApiEnabled ? "true" : "false"),
 			}),
 			new HtmlWebpackPlugin({
 				template: paths.html,
 				favicon: paths.icon,
 				inject: true,
+				excludeChunks: ["a", "a.worker"],
+				// Prevent preloading of SDK worker files that may not be used
+				scriptLoading: "defer",
 			}),
 			new CopyPlugin({
 				patterns: [
