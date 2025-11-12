@@ -62,32 +62,32 @@ window.addEventListener('message', (event) => {
   if (type === 'QHEALTH_EVENT') {
     switch (eventType) {
       case 'MEASUREMENT_STARTED':
-        console.log('Measurement started:', payload);
+        // console.log('Measurement started:', payload);
         handleMeasurementStarted(payload);
         break;
 
       case 'MEASUREMENT_COMPLETE':
-        console.log('Measurement complete:', payload);
+        // console.log('Measurement complete:', payload);
         handleMeasurementComplete(payload);
         break;
 
       case 'MEASUREMENT_FAILED':
-        console.error('Measurement failed:', payload);
+        // console.error('Measurement failed:', payload);
         handleMeasurementFailed(payload);
         break;
 
       case 'SESSION_CREATED':
-        console.log('Session created:', payload);
+        // console.log('Session created:', payload);
         handleSessionCreated(payload);
         break;
 
       case 'ERROR':
-        console.error('Error:', payload);
+        // console.error('Error:', payload);
         handleError(payload);
         break;
 
       default:
-        console.warn('Unknown event:', eventType);
+        // console.warn('Unknown event:', eventType);
     }
   }
 
@@ -164,10 +164,10 @@ function handleResponse(requestId, { success, data, error }) {
 async function getLatestResults(sessionId) {
   try {
     const results = await sendRequest('GET_LATEST_RESULTS', { sessionId });
-    console.log('Latest results:', results);
+    // console.log('Latest results:', results);
     return results;
   } catch (error) {
-    console.error('Failed to get latest results:', error);
+    // console.error('Failed to get latest results:', error);
     throw error;
   }
 }
@@ -179,10 +179,10 @@ async function getLatestResults(sessionId) {
 async function getSessionInfo() {
   try {
     const sessionInfo = await sendRequest('GET_SESSION_INFO');
-    console.log('Session info:', sessionInfo);
+    // console.log('Session info:', sessionInfo);
     return sessionInfo;
   } catch (error) {
-    console.error('Failed to get session info:', error);
+    // console.error('Failed to get session info:', error);
     throw error;
   }
 }
@@ -194,10 +194,10 @@ async function getSessionInfo() {
 async function getSessionStatus(sessionId) {
   try {
     const status = await sendRequest('GET_SESSION_STATUS', { sessionId });
-    console.log('Session status:', status);
+    // console.log('Session status:', status);
     return status;
   } catch (error) {
-    console.error('Failed to get session status:', error);
+    // console.error('Failed to get session status:', error);
     throw error;
   }
 }
@@ -209,10 +209,10 @@ async function getSessionStatus(sessionId) {
 async function listSessions() {
   try {
     const sessions = await sendRequest('LIST_SESSIONS');
-    console.log('Sessions:', sessions);
+    // console.log('Sessions:', sessions);
     return sessions;
   } catch (error) {
-    console.error('Failed to list sessions:', error);
+    // console.error('Failed to list sessions:', error);
     throw error;
   }
 }
@@ -224,10 +224,10 @@ async function listSessions() {
 async function ping() {
   try {
     const response = await sendRequest('PING');
-    console.log('Ping response:', response);
+    // console.log('Ping response:', response);
     return response;
   } catch (error) {
-    console.error('Ping failed:', error);
+    // console.error('Ping failed:', error);
     throw error;
   }
 }
@@ -244,23 +244,23 @@ if (window.QHealthAPI) {
 
   // Subscribe to events
   api.on('MEASUREMENT_COMPLETE', (payload) => {
-    console.log('Measurement complete:', payload);
+    // console.log('Measurement complete:', payload);
     handleMeasurementComplete(payload);
   });
 
   api.on('MEASUREMENT_STARTED', (payload) => {
-    console.log('Measurement started:', payload);
+    // console.log('Measurement started:', payload);
     handleMeasurementStarted(payload);
   });
 
   api.on('ERROR', (payload) => {
-    console.error('Error:', payload);
+    // console.error('Error:', payload);
     handleError(payload);
   });
 
   // Unsubscribe from events
   const handler = (payload) => {
-    console.log('Event:', payload);
+    // console.log('Event:', payload);
   };
   api.on('MEASUREMENT_COMPLETE', handler);
   api.off('MEASUREMENT_COMPLETE', handler);
@@ -269,10 +269,10 @@ if (window.QHealthAPI) {
   async function getLatestResults() {
     try {
       const results = await api.getLatestResults();
-      console.log('Latest results:', results);
+      // console.log('Latest results:', results);
       return results;
     } catch (error) {
-      console.error('Failed to get latest results:', error);
+      // console.error('Failed to get latest results:', error);
       throw error;
     }
   }
@@ -281,10 +281,10 @@ if (window.QHealthAPI) {
   async function getSessionInfo() {
     try {
       const sessionInfo = await api.getSessionInfo();
-      console.log('Session info:', sessionInfo);
+      // console.log('Session info:', sessionInfo);
       return sessionInfo;
     } catch (error) {
-      console.error('Failed to get session info:', error);
+      // console.error('Failed to get session info:', error);
       throw error;
     }
   }
@@ -293,10 +293,10 @@ if (window.QHealthAPI) {
   async function getSessionStatus(sessionId) {
     try {
       const status = await api.getSessionStatus(sessionId);
-      console.log('Session status:', status);
+      // console.log('Session status:', status);
       return status;
     } catch (error) {
-      console.error('Failed to get session status:', error);
+      // console.error('Failed to get session status:', error);
       throw error;
     }
   }
@@ -305,10 +305,10 @@ if (window.QHealthAPI) {
   async function listSessions() {
     try {
       const sessions = await api.listSessions();
-      console.log('Sessions:', sessions);
+      // console.log('Sessions:', sessions);
       return sessions;
     } catch (error) {
-      console.error('Failed to list sessions:', error);
+      // console.error('Failed to list sessions:', error);
       throw error;
     }
   }
@@ -317,10 +317,10 @@ if (window.QHealthAPI) {
   async function ping() {
     try {
       const response = await api.ping();
-      console.log('Ping response:', response);
+      // console.log('Ping response:', response);
       return response;
     } catch (error) {
-      console.error('Ping failed:', error);
+      // console.error('Ping failed:', error);
       throw error;
     }
   }
