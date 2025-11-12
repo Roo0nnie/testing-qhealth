@@ -503,6 +503,9 @@ export async function sendResultsToGaleAPI(
 			throw new Error("GALE API returned success: false")
 		}
 
+		// Log the complete request format that was successfully sent
+		console.log("📤 GALE API Request Format (Successfully Sent):", JSON.stringify(payload, null, 2))
+
 		console.log("✅ Successfully sent results to GALE API", {
 			sessionId: results.sessionId,
 			timestamp: results.timestamp,
