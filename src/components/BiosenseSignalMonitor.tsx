@@ -72,7 +72,6 @@ const BiosenseSignalMonitor = ({
 
 	const isMeasuring = useCallback(() => sessionState === SessionState.MEASURING, [sessionState])
 	const timerSeconds = useTimer(isMeasuring(), processingTime)
-	const prevTimerSeconds = usePrevious(timerSeconds)
 
 	const isVideoReady = useCallback(
 		() => video.current?.readyState === VideoReadyState.HAVE_ENOUGH_DATA,
@@ -83,12 +82,9 @@ const BiosenseSignalMonitor = ({
 		setIsLoading(true)
 		if (sessionState === SessionState.ACTIVE) {
 			setStartMeasuring(true)
-			// CRITICAL: Reset hasSentResults when starting a new measurement
 			setHasSentResults(false)
-			console.log("🔄 Starting new measurement, reset hasSentResults to false")
 			setLoadingTimeoutPromise(window.setTimeout(() => setIsLoading(true), processingTime * 1000))
 
-			
 			if (sessionId) {
 				const api = getQHealthAPI()
 				api.broadcastEvent("MEASUREMENT_STARTED", {
@@ -105,111 +101,52 @@ const BiosenseSignalMonitor = ({
 		}
 	}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise, sessionId])
 
-	// Reset hasSentResults when sessionId changes (new measurement session)
+	// Single useEffect: When timer reaches 0, show modal AND send results to API
 	useEffect(() => {
-		console.log("🔄 Session ID changed, resetting hasSentResults", { sessionId, hasSentResults })
-		setHasSentResults(false)
-	}, [sessionId])
-
-	// IMPROVED: Send results to GALE API when timer reaches 0 (measurement complete)
-	useEffect(() => {
-		console.log("🎯 Checking send conditions...", {
-			timerSeconds,
-			prevTimerSeconds,
-			hasVitalSigns: !!vitalSigns,
-			hasSessionId: !!sessionId,
-			hasSentResults,
-		})
-
-		// More robust condition - trigger when timer reaches 0 or 1
-		const shouldSendResults = 
-			(timerSeconds === 0 || timerSeconds === 1) &&
-			prevTimerSeconds !== undefined &&
-			prevTimerSeconds > timerSeconds && // Ensure timer is actually counting down
-			vitalSigns &&
-			sessionId &&
-			!hasSentResults
-
-		if (shouldSendResults) {
-			console.log("⏱️ Timer reached target! Sending vitalSigns to GALE API...")
-			console.log("📤 vitalSigns to be sent to API endpoint:", vitalSigns)
-
+		// Only trigger when timer reaches 0, we have vital signs, session ID, and haven't sent yet
+		if (timerSeconds === 1 && vitalSigns && sessionId && !hasSentResults) {
+			console.log("⏱️ Measurement complete! Showing modal and sending results to API...")
+			
+			// Show results modal
+			setIsResultsModalOpen(true)
+			
+			// Send results to GALE API
 			const sendResultsToAPI = async () => {
 				try {
-					const api = getQHealthAPI()
 					const measurementResults: MeasurementResults = {
 						sessionId,
 						vitalSigns,
 						timestamp: Date.now(),
 					}
 
-					console.log("📦 Prepared measurement results for GALE API:", {
+					console.log("📦 Sending measurement results to GALE API:", {
 						sessionId: measurementResults.sessionId,
 						timestamp: measurementResults.timestamp,
-						vitalSignsKeys: Object.keys(measurementResults.vitalSigns),
-						vitalSigns: measurementResults.vitalSigns,
 					})
 
-					// Mark as sent immediately to prevent duplicate sends
 					setHasSentResults(true)
-					console.log("✅ Results prepared successfully, sending to GALE API...")
 
-					// Send results to GALE External API (fire-and-forget, non-blocking)
-					sendResultsToGaleAPI(measurementResults)
-						.then(result => {
-							if (result.success) {
-								console.log("✅ GALE API submission completed successfully", {
-									sessionId: measurementResults.sessionId,
-									result,
-								})
-							} else {
-								console.warn("⚠️ GALE API submission failed (non-blocking):", {
-									sessionId: measurementResults.sessionId,
-									error: result.error,
-									result,
-								})
-							}
-						})
-						.catch(galeError => {
-							console.error("❌ GALE API submission error (non-blocking):", {
-								sessionId: measurementResults.sessionId,
-								error: galeError,
-							})
-						})
+					const result = await sendResultsToGaleAPI(measurementResults)
+					
+					if (result.success) {
+						console.log("✅ GALE API submission completed successfully")
+					} else {
+						console.warn("⚠️ GALE API submission failed:", result.error)
+					}
 				} catch (err) {
-					console.error("❌ Error preparing results for GALE API:", err)
-
-					// Broadcast error event
-					const api = getQHealthAPI()
-					api.broadcastEvent("ERROR", {
-						code: "STORAGE_ERROR",
-						message: err instanceof Error ? err.message : "Failed to prepare results",
-					})
+					console.error("❌ Error sending results to GALE API:", err)
 				}
 			}
 
 			sendResultsToAPI()
-		} else {
-			// Log why condition wasn't met
-			if (timerSeconds <= 1 && !shouldSendResults) {
-				console.log("❌ Send condition NOT met:", {
-					timerSeconds,
-					prevTimerSeconds,
-					"prevTimerSeconds > timerSeconds": prevTimerSeconds !== undefined && prevTimerSeconds > timerSeconds,
-					hasVitalSigns: !!vitalSigns,
-					hasSessionId: !!sessionId,
-					hasSentResults,
-				})
-			}
 		}
-	}, [timerSeconds, prevTimerSeconds, vitalSigns, sessionId, hasSentResults])
+	}, [timerSeconds, vitalSigns, sessionId, hasSentResults])
 
 	useEffect(() => {
 		if (isMeasuring()) {
 			setIsLoading(false)
 			if (errorMessage) {
 				setIsMeasurementEnabled(false)
-				// Broadcast MEASUREMENT_FAILED event on error
 				if (sessionId) {
 					const api = getQHealthAPI()
 					api.broadcastEvent("MEASUREMENT_FAILED", {
@@ -242,13 +179,6 @@ const BiosenseSignalMonitor = ({
 	useEffect(() => {
 		onLicenseStatus(!(error?.code in HealthMonitorCodes))
 	}, [error, onLicenseStatus])
-
-	// Show results modal when timer reaches 0
-	useEffect(() => {
-		if (timerSeconds === 1) {
-			setIsResultsModalOpen(true)
-		}
-	}, [timerSeconds])
 
 	const handleCloseModal = useCallback(() => {
 		setIsResultsModalOpen(false)
