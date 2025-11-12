@@ -121,24 +121,24 @@ const BiosenseSignalMonitor = ({
 			hasSentResults,
 		})
 
-		// More robust condition - trigger when timer reaches 0 or 1
+		// More robust condition - trigger when timer reaches 0 or when it just changed to 1
 		const shouldSendResults = 
-			(timerSeconds === 0 || timerSeconds === 1) &&
+			timerSeconds <= 1 && // Timer is at 0 or 1
 			prevTimerSeconds !== undefined &&
-			prevTimerSeconds > timerSeconds && // Ensure timer is actually counting down
+			prevTimerSeconds >= 1 && // Previous was 2 or higher (ensures we just reached the end)
 			vitalSigns &&
 			sessionId &&
 			!hasSentResults
 
-		if (shouldSendResults) {
+		if (!shouldSendResults) {
 			console.log("⏱️ Timer reached target! Sending vitalSigns to GALE API...")
 			console.log("📤 vitalSigns to be sent to API endpoint:", vitalSigns)
 
 			const sendResultsToAPI = async () => {
 				try {
-					const api = getQHealthAPI()
+					// const api = getQHealthAPI()
 					const measurementResults: MeasurementResults = {
-						sessionId,
+						sessionId: sessionId || "",
 						vitalSigns,
 						timestamp: Date.now(),
 					}
@@ -195,7 +195,8 @@ const BiosenseSignalMonitor = ({
 				console.log("❌ Send condition NOT met:", {
 					timerSeconds,
 					prevTimerSeconds,
-					"prevTimerSeconds > timerSeconds": prevTimerSeconds !== undefined && prevTimerSeconds > timerSeconds,
+					"timerSeconds <= 1": timerSeconds <= 1,
+					"prevTimerSeconds >= 2": prevTimerSeconds !== undefined && prevTimerSeconds >= 2,
 					hasVitalSigns: !!vitalSigns,
 					hasSessionId: !!sessionId,
 					hasSentResults,
