@@ -89,22 +89,22 @@ function common() {
 			clean: true,
 		},
 		...(isProduction
-			? {}
-			: {
-					devServer: {
-						hot: true,
-						port: 8001,
-						https: true,
-						host: "0.0.0.0",
-						useLocalIp: true,
-						historyApiFallback: true,
-						contentBase: false,
-						headers: {
-							"Cross-Origin-Opener-Policy": "same-origin",
-							"Cross-Origin-Embedder-Policy": "require-corp",
+				? {}
+				: {
+						devServer: {
+							hot: true,
+							port: 8001,
+							https: true,
+							host: "0.0.0.0",
+							useLocalIp: true,
+							historyApiFallback: true,
+							contentBase: false,
+							headers: {
+								"Cross-Origin-Opener-Policy": "same-origin",
+								"Cross-Origin-Embedder-Policy": "require-corp",
+							},
 						},
-					},
-				}),
+					}),
 		target: "web",
 		resolve: {
 			extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs"],

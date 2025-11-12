@@ -132,7 +132,7 @@ const vitalSignsConfig = [
 
 const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 	const statsToDisplay = useMemo(() => {
-		return vitalSignsConfig.map((config) => {
+		const stats = vitalSignsConfig.map((config) => {
 			const vitalSign = vitalSigns[config.key as keyof VitalSigns]
 
 			// If vital sign doesn't exist, show it as disabled
@@ -154,6 +154,8 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 				isEnabled: vitalSign.isEnabled,
 			}
 		})
+
+		return stats
 	}, [vitalSigns])
 
 	return (
