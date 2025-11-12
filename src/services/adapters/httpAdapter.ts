@@ -11,7 +11,7 @@ export class HTTPAdapter implements APIAdapter {
 	private timeout: number
 
 	constructor(baseURL: string, apiKey?: string, timeout: number = 10000) {
-		this.baseURL = baseURL.replace(/\/$/, "") // Remove trailing slash
+		this.baseURL = baseURL.replace(/\/$/, "")
 		this.apiKey = apiKey
 		this.timeout = timeout
 	}
