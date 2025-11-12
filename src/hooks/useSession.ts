@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 
 import { SessionData } from "../types"
@@ -6,7 +6,8 @@ import { SessionData } from "../types"
 /**
  * Session management hook
  * - On desktop: Generates a new session ID
- * - On mobile: Parses session ID from URL query parameter
+ * - On mobile: Parses session ID from URL query parameter, or generates a new one if missing
+ *   and updates the URL to include it
  */
 const useSession = (isDesktop: boolean): SessionData | null => {
 	const [session, setSession] = useState<SessionData | null>(() => {
@@ -20,25 +21,36 @@ const useSession = (isDesktop: boolean): SessionData | null => {
 		} else {
 			// Parse session ID from URL on mobile
 			const params = new URLSearchParams(window.location.search)
-			const sessionId = params.get("session")
+			let sessionId = params.get("session")
 
-			if (sessionId) {
-				return {
-					sessionId,
-					createdAt: Date.now(),
-				}
+			// If no sessionId exists, generate a new one
+			if (!sessionId) {
+				sessionId = uuidv4()
 			}
 
-			return null
+			return {
+				sessionId,
+				createdAt: Date.now(),
+			}
 		}
 	})
 
-	// Clean up session when component unmounts (optional)
+	// Update URL if sessionId was generated (mobile only)
 	useEffect(() => {
-		return () => {
-			// Session cleanup if needed
+		if (!isDesktop && session) {
+			const params = new URLSearchParams(window.location.search)
+			const existingSessionId = params.get("session")
+
+			// If URL doesn't have sessionId, update it
+			if (!existingSessionId || existingSessionId !== session.sessionId) {
+				params.set("session", session.sessionId)
+				
+				// Preserve other URL parameters and update the URL
+				const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`
+				window.history.replaceState({}, "", newUrl)
+			}
 		}
-	}, [])
+	}, [isDesktop, session])
 
 	return session
 }
