@@ -129,7 +129,7 @@
 						timestamp: Date.now(),
 					})
 					api.updateSessionStatus(sessionId, SessionStatus.MEASURING).catch(err => {
-						console.error("Failed to update session status:", err)
+						// console.error("Failed to update session status:", err)
 					})
 				}
 			} else if (isMeasuring()) {
@@ -207,7 +207,7 @@
 							timestamp: Date.now(),
 						})
 						api.updateSessionStatus(sessionId, SessionStatus.FAILED).catch(err => {
-							console.error("Failed to update session status:", err)
+							// console.error("Failed to update session status:", err)
 						})
 					}
 				} else {

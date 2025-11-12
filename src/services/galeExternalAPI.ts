@@ -17,20 +17,20 @@ interface GaleAPIConfig {
  */
 function getGaleAPIConfig(): GaleAPIConfig | null {
 	// Debug: Check what's available
-	console.log("🔧 Environment Variables Check:", {
-		// @ts-ignore
-		GALE_API_BASE_URL: process.env.GALE_API_BASE_URL,
-		// @ts-ignore
-		GALE_API_KEY: process.env.GALE_API_KEY ? "***EXISTS***" : "MISSING",
-		// @ts-ignore
-		GALE_SCAN_SOURCE_SYSTEM_NAME: process.env.GALE_SCAN_SOURCE_SYSTEM_NAME,
-		// @ts-ignore
-		GALE_SCAN_SOURCE_PUBLISHER: process.env.GALE_SCAN_SOURCE_PUBLISHER,
-		// @ts-ignore
-		GALE_API_ENABLED: process.env.GALE_API_ENABLED,
-		// @ts-ignore
-		allEnvKeys: Object.keys(process.env || {}).filter(key => key.includes("GALE"))
-	})
+	// console.log("🔧 Environment Variables Check:", {
+	// 	// @ts-ignore
+	// 	GALE_API_BASE_URL: process.env.GALE_API_BASE_URL,
+	// 	// @ts-ignore
+	// 	GALE_API_KEY: process.env.GALE_API_KEY ? "***EXISTS***" : "MISSING",
+	// 	// @ts-ignore
+	// 	GALE_SCAN_SOURCE_SYSTEM_NAME: process.env.GALE_SCAN_SOURCE_SYSTEM_NAME,
+	// 	// @ts-ignore
+	// 	GALE_SCAN_SOURCE_PUBLISHER: process.env.GALE_SCAN_SOURCE_PUBLISHER,
+	// 	// @ts-ignore
+	// 	GALE_API_ENABLED: process.env.GALE_API_ENABLED,
+	// 	// @ts-ignore
+	// 	allEnvKeys: Object.keys(process.env || {}).filter(key => key.includes("GALE"))
+	// })
 
 	// @ts-ignore - process.env variables are replaced by webpack DefinePlugin or available via dotenv
 	const baseURL = process.env.GALE_API_BASE_URL
@@ -44,16 +44,16 @@ function getGaleAPIConfig(): GaleAPIConfig | null {
 	const enabled = process.env.GALE_API_ENABLED !== "false" // Default to true if not set
 
 	if (!baseURL || !apiToken) {
-		console.warn("⚠️ GALE API configuration missing. GALE API calls will be disabled.", {
-			hasBaseURL: !!baseURL,
-			hasapiToken: !!apiToken,
-			baseURL: baseURL || "MISSING",
-			apiTokenLength: apiToken?.length || 0
-		})
+		// console.warn("⚠️ GALE API configuration missing. GALE API calls will be disabled.", {
+		// 	hasBaseURL: !!baseURL,
+		// 	hasapiToken: !!apiToken,
+		// 	baseURL: baseURL || "MISSING",
+		// 	apiTokenLength: apiToken?.length || 0
+		// })
 		
 		// TEMPORARY FALLBACK for development/testing
 		// Remove this once env vars are working properly
-		console.log("🔄 Using hardcoded fallback configuration (DEVELOPMENT ONLY)")
+		// console.log("🔄 Using hardcoded fallback configuration (DEVELOPMENT ONLY)")
 		return {
 			baseURL: "https://dev-external-api-gale.mangobeach-5e679f1c.southeastasia.azurecontainerapps.io",
 			apiToken: "4ceLQ2rfOn5YSZLYzdpn0hj5PRGV2y02tPYdsJaq_lfftV2yIUMzBae-_wswvcLITDngb9Rxhm1MEUA2WeYUSQegFE_p1aJkghMSpEWDxbGZFEUxw1sD0Eal",
@@ -71,14 +71,14 @@ function getGaleAPIConfig(): GaleAPIConfig | null {
 		enabled,
 	}
 
-	console.log("✅ GALE API Configuration Loaded:", {
-		baseURL: config.baseURL,
-		hasapiToken: !!config.apiToken,
-		apiTokenLength: config.apiToken.length,
-		systemName: config.systemName,
-		publisher: config.publisher,
-		enabled: config.enabled,
-	})
+	// console.log("✅ GALE API Configuration Loaded:", {
+	// 	baseURL: config.baseURL,
+	// 	hasapiToken: !!config.apiToken,
+	// 	apiTokenLength: config.apiToken.length,
+	// 	systemName: config.systemName,
+	// 	publisher: config.publisher,
+	// 	enabled: config.enabled,
+	// })
 
 	return config
 }
@@ -87,22 +87,22 @@ function getGaleAPIConfig(): GaleAPIConfig | null {
  * Transform VitalSigns to flat JSON format for GALE API
  */
 function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string, any> {
-	console.log("🔄 Transforming vital signs to GALE format...")
-	console.log("📊 Incoming vital signs data:", {
-		keys: Object.keys(vitalSigns),
-		vitalSigns: vitalSigns
-	})
+	// console.log("🔄 Transforming vital signs to GALE format...")
+	// console.log("📊 Incoming vital signs data:", {
+	// 	keys: Object.keys(vitalSigns),
+	// 	vitalSigns: vitalSigns
+	// })
 	
 	// DEBUG: Log each vital sign's structure
-	console.log("🔍 Detailed vital signs inspection:")
-	Object.entries(vitalSigns).forEach(([key, value]) => {
-		console.log(`  ${key}:`, {
-			hasValue: value && 'value' in value,
-			value: value?.value,
-			isEnabled: value?.isEnabled,
-			type: typeof value?.value
-		})
-	})
+	// console.log("🔍 Detailed vital signs inspection:")
+	// Object.entries(vitalSigns).forEach(([key, value]) => {
+	// 	console.log(`  ${key}:`, {
+	// 		hasValue: value && 'value' in value,
+	// 		value: value?.value,
+	// 		isEnabled: value?.isEnabled,
+	// 		type: typeof value?.value
+	// 	})
+	// })
 	
 	// Initialize scanResult with all fields set to null
 	// This ensures the API always receives a consistent structure with all 31+ fields
@@ -178,7 +178,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 		const value = getValue(vitalSign)
 		if (value === null) {
 			if (key) {
-				console.log(`  ${key}: null (not enabled or no value)`)
+				// console.log(`  ${key}: null (not enabled or no value)`)
 			}
 			return null
 		}
@@ -186,7 +186,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 		// If it's already a number, return it
 		if (typeof value === 'number') {
 			if (key) {
-				console.log(`  ${key}: ${value} (number)`)
+				// console.log(`  ${key}: ${value} (number)`)
 			}
 			return value
 		}
@@ -439,13 +439,13 @@ export async function sendResultsToGaleAPI(
 			scan_result: scanResult,
 		}
 
-		console.log("📦 Prepared GALE API payload:", {
-			scan_source_id: payload.scan_source_id,
-			scan_source_system_name: payload.scan_source_system_name,
-			scan_source_publisher: payload.scan_source_publisher,
-			scan_result_fields: Object.keys(payload.scan_result).length,
-			scan_result: payload.scan_result
-		})
+		// console.log("📦 Prepared GALE API payload:", {
+		// 	scan_source_id: payload.scan_source_id,
+		// 	scan_source_system_name: payload.scan_source_system_name,
+		// 	scan_source_publisher: payload.scan_source_publisher,
+		// 	scan_result_fields: Object.keys(payload.scan_result).length,
+		// 	scan_result: payload.scan_result
+		// })
 
 		// Validate payload structure
 		if (!payload.scan_source_id || !payload.scan_source_system_name || !payload.scan_source_publisher) {
@@ -454,12 +454,12 @@ export async function sendResultsToGaleAPI(
 
 		// Make API request
 		const endpoint = `${config.baseURL}/api/external/test_patient/scan/rppg/save`
-		console.log("🚀 Sending POST request to GALE API...", {
-			endpoint,
-			method: "POST",
-			hasapiToken: !!config.apiToken,
-			apiTokenLength: config.apiToken.length,
-		})
+		// console.log("🚀 Sending POST request to GALE API...", {
+		// 	endpoint,
+		// 	method: "POST",
+		// 	hasapiToken: !!config.apiToken,
+		// 	apiTokenLength: config.apiToken.length,
+		// })
 
 		const response = await fetch(endpoint, {
 			method: "POST",
@@ -470,58 +470,58 @@ export async function sendResultsToGaleAPI(
 			body: JSON.stringify(payload),
 		})
 
-		console.log("📥 Received response from GALE API:", {
-			status: response.status,
-			statusText: response.statusText,
-			ok: response.ok,
-			headers: {
-				contentType: response.headers.get("content-type"),
-			}
-		})
+		// console.log("📥 Received response from GALE API:", {
+		// 	status: response.status,
+		// 	statusText: response.statusText,
+		// 	ok: response.ok,
+		// 	headers: {
+		// 		contentType: response.headers.get("content-type"),
+		// 	}
+		// })
 
 		if (!response.ok) {
 			const errorText = await response.text().catch(() => "Unknown error")
-			console.error("❌ GALE API request failed:", {
-				status: response.status,
-				statusText: response.statusText,
-				error: errorText,
-				sessionId: results.sessionId,
-				endpoint,
-			})
+			// console.error("❌ GALE API request failed:", {
+			// 	status: response.status,
+			// 	statusText: response.statusText,
+			// 	error: errorText,
+			// 	sessionId: results.sessionId,
+			// 	endpoint,
+			// })
 			throw new Error(`GALE API request failed: ${response.status} ${response.statusText} - ${errorText}`)
 		}
 
 		const responseData = await response.json().catch(() => ({}))
 		
-		console.log("📄 GALE API response data:", responseData)
+		// console.log("📄 GALE API response data:", responseData)
 		
 		if (responseData.success === false) {
-			console.error("❌ GALE API returned success: false", {
-				response: responseData,
-				sessionId: results.sessionId,
-			})
+			// console.error("❌ GALE API returned success: false", {
+			// 	response: responseData,
+			// 	sessionId: results.sessionId,
+			// })
 			throw new Error("GALE API returned success: false")
 		}
 
 		// Log the complete request format that was successfully sent
-		console.log("📤 GALE API Request Format (Successfully Sent):", JSON.stringify(payload, null, 2))
+		// console.log("📤 GALE API Request Format (Successfully Sent):", JSON.stringify(payload, null, 2))
 
-		console.log("✅ Successfully sent results to GALE API", {
-			sessionId: results.sessionId,
-			timestamp: results.timestamp,
-			response: responseData,
-		})
+		// console.log("✅ Successfully sent results to GALE API", {
+		// 	sessionId: results.sessionId,
+		// 	timestamp: results.timestamp,
+		// 	response: responseData,
+		// })
 
 		return { success: true }
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Unknown error"
-		console.error("❌ Failed to send results to GALE API:", {
-			error: errorMessage,
-			sessionId: results.sessionId,
-			timestamp: results.timestamp,
-			fullError: error,
-			stack: error instanceof Error ? error.stack : undefined,
-		})
+		// console.error("❌ Failed to send results to GALE API:", {
+		// 	error: errorMessage,
+		// 	sessionId: results.sessionId,
+		// 	timestamp: results.timestamp,
+		// 	fullError: error,
+		// 	stack: error instanceof Error ? error.stack : undefined,
+		// })
 
 		// Don't throw - fail silently to not block user experience
 		return { success: false, error: errorMessage }
