@@ -11,9 +11,11 @@ import monitor, {
 	SessionState,
 	VitalSigns,
 	VitalSignsResults,
+	Sex,
 } from "@biosensesignal/web-sdk"
 
 import { InfoData, InfoType } from "../types"
+import { useDemographics } from "./useDemographics"
 
 const useMonitor = (
 	video: MutableRefObject<HTMLVideoElement>,
@@ -23,6 +25,27 @@ const useMonitor = (
 	productId: string,
 	startMeasuring: boolean
 ) => {
+	// Get demographics from URL, with static fallback for testing
+	const urlDemographics = useDemographics()
+	
+	// Static fallback demographics for testing when URL params are missing
+	const staticDemographics = {
+		age: 24,
+		height: 160, // cm
+		weight: 60, // kg
+		sex: "male" as const,
+		smoking: false,
+	}
+	
+	// Use URL demographics if available, otherwise use static fallback
+	const demographics = {
+		age: urlDemographics.age ?? staticDemographics.age,
+		height: urlDemographics.height ?? staticDemographics.height,
+		weight: urlDemographics.weight ?? staticDemographics.weight,
+		sex: urlDemographics.sex ?? staticDemographics.sex,
+		smoking: urlDemographics.smoking ?? staticDemographics.smoking,
+	}
+	
 	const [session, setSession] = useState<HealthMonitorSession>()
 	const [sessionState, setSessionState] = useState<SessionState>()
 	const [isMonitorReady, setIsMonitorReady] = useState<boolean>()
@@ -170,6 +193,14 @@ const useMonitor = (
 
 				sessionState === SessionState.ACTIVE && session?.terminate()
 
+				// Convert demographics to SDK format
+				const subjectDemographic = {
+					sex: demographics.sex === "male" ? Sex.MALE : Sex.FEMALE,
+					age: demographics.age,
+					weight: demographics.weight,
+					height: demographics.height,
+				}
+
 				const options: FaceSessionOptions = {
 					input: video.current,
 					cameraDeviceId: cameraId,
@@ -181,6 +212,7 @@ const useMonitor = (
 					onStateChange,
 					orientation: DeviceOrientation.PORTRAIT,
 					onImageData,
+					subjectDemographic,
 					// isAnalyticsEnabled: true,
 					/*******************************************************************************
 					 * For accurate vital signs calculation the user's parameters should be provided.
@@ -204,7 +236,7 @@ const useMonitor = (
 				console.error("Error creating a session", e)
 			}
 		})()
-	}, [processingTime, isMonitorReady])
+	}, [processingTime, isMonitorReady, demographics.age, demographics.height, demographics.weight, demographics.sex])
 
 	useEffect(() => {
 		if (startMeasuring) {

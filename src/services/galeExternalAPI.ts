@@ -1,4 +1,13 @@
 import { MeasurementResults, VitalSigns } from "../types"
+import {
+	calculateHighBloodPressureRisk,
+	calculateHighFastingGlucoseRisk,
+	calculateHighHbA1cRisk,
+	calculateHighTotalCholesterolRisk,
+	calculateLowHemoglobinRisk,
+	convertWellnessLevelToString,
+	convertSNSIndexToZone,
+} from "../utils/riskLevelCalculator"
 
 /**
  * GALE External API Configuration
@@ -100,58 +109,45 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	// 	})
 	// })
 	
-	// Initialize scanResult with all fields set to null
-	// This ensures the API always receives a consistent structure with all 31+ fields
+	// Initialize scanResult with only the fields we want to send
+	// Filtered to exclude confidence fields, rri, and other unwanted fields
 	const scanResult: Record<string, any> = {
-		// Basic Vital Signs
-		pulse_rate: null,
-		heart_rate: null,
-		respiration_rate: null,
-		spo2: null,
-		blood_pressure_systolic: null,
-		blood_pressure_diastolic: null,
+		// Risk Indicators (must be first for ASCVD calculation)
+		ascvd_risk: null,
+		ascvd_risk_level: null,
 		
-		// HRV Metrics
-		sdnn: null,
+		// Basic Vital Signs
+		blood_pressure: null, // Formatted as "106/69"
+		cardiac_workload: null,
+		heart_rate: null,
+		hemoglobin: null,
+		hemoglobin_a1c: null,
+		lf_hf_ratio: null,
+		low_hemoglobin_risk: null,
+		mean_arterial_pressure: null,
+		mean_rri: null,
+		normalized_stress_index: null,
+		pns_index: null,
+		pns_zone: null,
+		prq: null,
+		pulse_pressure: null,
+		respiration_rate: null,
 		rmssd: null,
 		sd1: null,
 		sd2: null,
-		mean_rri: null,
-
-		rri: null,
-		lf_hf_ratio: null,
-		
-		// Stress & Wellness
-		stress_level: null,
-		stress_index: null,
-		normalized_stress_index: null,
-
-		wellness_index: null,
-		wellness_level: null,
-		
-		// Nervous System
+		sdnn: null,
 		sns_index: null,
 		sns_zone: null,
-		pns_index: null,
-
-		pns_zone: null,
-		
-		// Other Metrics
-		prq: null,
-		hemoglobin: null,
-		hemoglobin_a1c: null,
-		cardiac_workload: null,
-        
-		mean_arterial_pressure: null,
-		pulse_pressure: null,
-		
-		// Risk Indicators
-	
+		spo2: null,
+		stress_index: null,
+		stress_level: null,
+		wellness_index: null,
+		wellness_level: null,
+		heart_age: null,
 		high_blood_pressure_risk: null,
 		high_fasting_glucose_risk: null,
 		high_hemoglobin_a1c_risk: null,
 		high_total_cholesterol_risk: null,
-		low_hemoglobin_risk: null,
 	}
 
 	// Helper to extract value from VitalSign (returns null if not enabled or missing)
@@ -171,7 +167,8 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	}
 	
 	// Helper to extract numeric value (converts string numbers to actual numbers)
-	const getNumericValue = (vitalSign: { value: any; isEnabled: boolean } | undefined, key?: string): number | null => {
+	// Optionally rounds to specified decimal places
+	const getNumericValue = (vitalSign: { value: any; isEnabled: boolean } | undefined, key?: string, decimals?: number): number | null => {
 		const value = getValue(vitalSign)
 		if (value === null) {
 			if (key) {
@@ -180,197 +177,190 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 			return null
 		}
 		
-		// If it's already a number, return it
-		if (typeof value === 'number') {
-			if (key) {
-				// console.log(`  ${key}: ${value} (number)`)
-			}
-			return value
-		}
+		let numericValue: number | null = null
 		
-		// If it's a string that represents a number, parse it
-		if (typeof value === 'string') {
+		// If it's already a number, use it
+		if (typeof value === 'number') {
+			numericValue = value
+		} else if (typeof value === 'string') {
+			// If it's a string that represents a number, parse it
 			const parsed = parseFloat(value)
 			if (!isNaN(parsed)) {
-				if (key) {
-				
-				}
-				return parsed
+				numericValue = parsed
 			}
 		}
 		
-		if (key) {
-		
+		if (numericValue === null) {
+			return null
 		}
-		return null
+		
+		// Round to specified decimal places if provided
+		if (decimals !== undefined) {
+			return parseFloat(numericValue.toFixed(decimals))
+		}
+		
+		return numericValue
 	}
 
-	// Helper to format risk value as percentage string (e.g., 1 → "1%")
-	const getRiskValue = (vitalSign: { value: any; isEnabled: boolean } | undefined, key?: string): string | null => {
+	// Helper to format risk value as "Low"/"Medium"/"High" string (matching ResultsModal display)
+	const getRiskValue = (vitalSign: { value: any; isEnabled: boolean } | undefined, riskKey: string, vitalSigns: VitalSigns): string | null => {
 		const value = getValue(vitalSign)
 		if (value === null) {
-			if (key) {
-			
-			}
 			return null
 		}
 
-		// If it's already a string with %, return it
-		if (typeof value === 'string' && value.includes('%')) {
-			if (key) {
-				
-			}
+		// If it's already a string and matches risk levels, return it
+		if (typeof value === 'string' && ["Low", "Medium", "High"].includes(value)) {
 			return value
 		}
 
-		// If it's a number, format it as percentage string
-		if (typeof value === 'number') {
-			const formatted = `${value}%`
-			if (key) {
-			
-			}
-			return formatted
-		}
-
-		// If it's a string number, parse and format
-		if (typeof value === 'string') {
-			const parsed = parseFloat(value)
-			if (!isNaN(parsed)) {
-				const formatted = `${parsed}%`
-				if (key) {
-				
+		// Calculate risk level based on the risk key
+		let riskLevel: string | null = null
+		switch (riskKey) {
+			case "high_blood_pressure_risk":
+				riskLevel = calculateHighBloodPressureRisk(vitalSigns.bloodPressure?.value || null)
+				break
+			case "high_hemoglobin_a1c_risk":
+				riskLevel = calculateHighHbA1cRisk(vitalSigns.hemoglobinA1c?.value || null)
+				break
+			case "low_hemoglobin_risk":
+				riskLevel = calculateLowHemoglobinRisk(vitalSigns.hemoglobin?.value || null)
+				break
+			case "high_fasting_glucose_risk":
+				// For glucose risk, we need the actual glucose value, but we'll use the risk value if it's a number
+				if (typeof value === 'number') {
+					riskLevel = calculateHighFastingGlucoseRisk(value)
 				}
-				return formatted
-			}
+				break
+			case "high_total_cholesterol_risk":
+				// For cholesterol risk, we need the actual cholesterol value, but we'll use the risk value if it's a number
+				if (typeof value === 'number') {
+					riskLevel = calculateHighTotalCholesterolRisk(value)
+				}
+				break
 		}
 
-		// Default: convert to string
-		const formatted = String(value)
-		if (key) {
-			
-		}
-		return formatted
+		return riskLevel || null
 	}
 
-	scanResult.pulse_rate = getNumericValue(vitalSigns.pulseRate, "pulse_rate")
-	scanResult.heart_rate = getNumericValue(vitalSigns.pulseRate, "heart_rate")
-	scanResult.respiration_rate = getNumericValue(vitalSigns.respirationRate, "respiration_rate")
-	scanResult.spo2 = getNumericValue(vitalSigns.spo2, "spo2")
-
-	// FIX: Extract systolic and diastolic separately
+	// Risk Indicators (must be first)
+	// ascvd_risk should be a number (not percentage string), ascvd_risk_level should be a string
+	scanResult.ascvd_risk = getNumericValue(vitalSigns.ascvdRisk, "ascvd_risk")
+	const ascvdRiskLevel = getValue(vitalSigns.ascvdRiskLevel)
+	scanResult.ascvd_risk_level = ascvdRiskLevel ? String(ascvdRiskLevel) : null
+	
+	// Basic Vital Signs
+	// Format blood pressure as "106/69" string
 	const bloodPressure = getValue(vitalSigns.bloodPressure)
 	if (bloodPressure && typeof bloodPressure === 'object' && 'systolic' in bloodPressure && 'diastolic' in bloodPressure) {
-		// Handle numeric values or string numbers
 		const systolic = typeof bloodPressure.systolic === 'string' ? parseFloat(bloodPressure.systolic) : bloodPressure.systolic
 		const diastolic = typeof bloodPressure.diastolic === 'string' ? parseFloat(bloodPressure.diastolic) : bloodPressure.diastolic
-		scanResult.blood_pressure_systolic = isNaN(systolic) ? null : systolic
-		scanResult.blood_pressure_diastolic = isNaN(diastolic) ? null : diastolic
-	} else {
+		if (!isNaN(systolic) && !isNaN(diastolic)) {
+			scanResult.blood_pressure = `${systolic}/${diastolic}`
+		}
 	}
-
-	scanResult.sdnn = getNumericValue(vitalSigns.sdnn, "sdnn")
-	scanResult.rmssd = getNumericValue(vitalSigns.rmssd, "rmssd")
-	scanResult.sd1 = getNumericValue(vitalSigns.sd1, "sd1")
-	scanResult.sd2 = getNumericValue(vitalSigns.sd2, "sd2")
+	
+	scanResult.cardiac_workload = getNumericValue(vitalSigns.cardiacWorkload, "cardiac_workload")
+	scanResult.heart_rate = getNumericValue(vitalSigns.pulseRate, "heart_rate")
+	scanResult.hemoglobin = getNumericValue(vitalSigns.hemoglobin, "hemoglobin")
+	// Round hemoglobin_a1c to 1 decimal place (e.g., 5.9 instead of 5.91)
+	scanResult.hemoglobin_a1c = getNumericValue(vitalSigns.hemoglobinA1c, "hemoglobin_a1c", 1)
+	// Round lf_hf_ratio to 1 decimal place (e.g., 1.4 instead of 1.394)
+	scanResult.lf_hf_ratio = getNumericValue(vitalSigns.lfhf, "lf_hf_ratio", 1)
+	scanResult.low_hemoglobin_risk = getRiskValue(vitalSigns.lowHemoglobinRisk, "low_hemoglobin_risk", vitalSigns)
+	scanResult.mean_arterial_pressure = getNumericValue(vitalSigns.meanArterialPressure, "mean_arterial_pressure")
 	scanResult.mean_rri = getNumericValue(vitalSigns.meanRri, "mean_rri")
-	scanResult.rri = getValue(vitalSigns.rri) // Keep as array
-	if (scanResult.rri !== null) {
-		
-	} else {
-	}
-	scanResult.lf_hf_ratio = getNumericValue(vitalSigns.lfhf, "lf_hf_ratio")
-
-	scanResult.stress_level = getNumericValue(vitalSigns.stressLevel, "stress_level")
-	scanResult.stress_index = getNumericValue(vitalSigns.stressIndex, "stress_index")
 	scanResult.normalized_stress_index = getNumericValue(vitalSigns.normalizedStressIndex, "normalized_stress_index")
-	scanResult.wellness_index = getNumericValue(vitalSigns.wellnessIndex, "wellness_index")
-	scanResult.wellness_level = getNumericValue(vitalSigns.wellnessLevel, "wellness_level")
-
-	scanResult.sns_index = getNumericValue(vitalSigns.snsIndex, "sns_index")
-	const snsZone = getValue(vitalSigns.snsZone)
-	scanResult.sns_zone = snsZone
-
 	scanResult.pns_index = getNumericValue(vitalSigns.pnsIndex, "pns_index")
 	const pnsZone = getValue(vitalSigns.pnsZone)
 	scanResult.pns_zone = pnsZone
-	
 	scanResult.prq = getNumericValue(vitalSigns.prq, "prq")
-	scanResult.heart_age = getNumericValue(vitalSigns.heartAge, "heart_age")
-	scanResult.hemoglobin = getNumericValue(vitalSigns.hemoglobin, "hemoglobin")
-	scanResult.hemoglobin_a1c = getNumericValue(vitalSigns.hemoglobinA1c, "hemoglobin_a1c")
-	scanResult.cardiac_workload = getNumericValue(vitalSigns.cardiacWorkload, "cardiac_workload")
-	scanResult.mean_arterial_pressure = getNumericValue(vitalSigns.meanArterialPressure, "mean_arterial_pressure")
 	scanResult.pulse_pressure = getNumericValue(vitalSigns.pulsePressure, "pulse_pressure")
-
-	scanResult.ascvd_risk = getRiskValue(vitalSigns.ascvdRisk, "ascvd_risk")
-	scanResult.ascvd_risk_level = getRiskValue(vitalSigns.ascvdRiskLevel, "ascvd_risk_level")
-	scanResult.high_blood_pressure_risk = getRiskValue(vitalSigns.highBloodPressureRisk, "high_blood_pressure_risk")
-	scanResult.high_fasting_glucose_risk = getRiskValue(vitalSigns.highFastingGlucoseRisk, "high_fasting_glucose_risk")
-	scanResult.high_hemoglobin_a1c_risk = getRiskValue(vitalSigns.highHemoglobinA1CRisk, "high_hemoglobin_a1c_risk")
-	scanResult.high_total_cholesterol_risk = getRiskValue(vitalSigns.highTotalCholesterolRisk, "high_total_cholesterol_risk")
-	scanResult.low_hemoglobin_risk = getRiskValue(vitalSigns.lowHemoglobinRisk, "low_hemoglobin_risk")
-
-	// Add confidence levels where available
-	if (vitalSigns.pulseRate?.confidenceLevel !== undefined) {
-		scanResult.pulse_rate_confidence = vitalSigns.pulseRate.confidenceLevel
+	scanResult.respiration_rate = getNumericValue(vitalSigns.respirationRate, "respiration_rate")
+	scanResult.rmssd = getNumericValue(vitalSigns.rmssd, "rmssd")
+	scanResult.sd1 = getNumericValue(vitalSigns.sd1, "sd1")
+	scanResult.sd2 = getNumericValue(vitalSigns.sd2, "sd2")
+	scanResult.sdnn = getNumericValue(vitalSigns.sdnn, "sdnn")
+	scanResult.sns_index = getNumericValue(vitalSigns.snsIndex, "sns_index")
+	// Convert sns_zone from number to string ("high" instead of 2)
+	const snsZoneValue = getValue(vitalSigns.snsZone)
+	if (snsZoneValue !== null) {
+		if (typeof snsZoneValue === 'number') {
+			// Use snsIndex to convert to zone string
+			const snsIndexValue = getNumericValue(vitalSigns.snsIndex)
+			scanResult.sns_zone = convertSNSIndexToZone(snsIndexValue) || String(snsZoneValue)
+		} else if (typeof snsZoneValue === 'string') {
+			scanResult.sns_zone = snsZoneValue.toLowerCase()
+		} else {
+			scanResult.sns_zone = String(snsZoneValue)
+		}
+	} else {
+		scanResult.sns_zone = null
 	}
-	if (vitalSigns.respirationRate?.confidenceLevel !== undefined) {
-		scanResult.respiration_rate_confidence = vitalSigns.respirationRate.confidenceLevel
+	scanResult.spo2 = getNumericValue(vitalSigns.spo2, "spo2")
+	scanResult.stress_index = getNumericValue(vitalSigns.stressIndex, "stress_index")
+	scanResult.stress_level = getNumericValue(vitalSigns.stressLevel, "stress_level")
+	scanResult.wellness_index = getNumericValue(vitalSigns.wellnessIndex, "wellness_index")
+	// Convert wellness_level from number to string ("Low" instead of 3)
+	const wellnessLevelValue = getValue(vitalSigns.wellnessLevel)
+	if (wellnessLevelValue !== null) {
+		if (typeof wellnessLevelValue === 'number') {
+			scanResult.wellness_level = convertWellnessLevelToString(wellnessLevelValue) || String(wellnessLevelValue)
+		} else if (typeof wellnessLevelValue === 'string') {
+			// Capitalize first letter to match "Low"/"Medium"/"High" format
+			scanResult.wellness_level = wellnessLevelValue.charAt(0).toUpperCase() + wellnessLevelValue.slice(1).toLowerCase()
+		} else {
+			scanResult.wellness_level = String(wellnessLevelValue)
+		}
+	} else {
+		scanResult.wellness_level = null
 	}
-	if (vitalSigns.sdnn?.confidenceLevel !== undefined) {
-		scanResult.sdnn_confidence = vitalSigns.sdnn.confidenceLevel
-	}
-	if (vitalSigns.meanRri?.confidenceLevel !== undefined) {
-		scanResult.mean_rri_confidence = vitalSigns.meanRri.confidenceLevel
-	}
-	if (vitalSigns.prq?.confidenceLevel !== undefined) {
-		scanResult.prq_confidence = vitalSigns.prq.confidenceLevel
-	}
+	scanResult.heart_age = getNumericValue(vitalSigns.heartAge, "heart_age")
+	scanResult.high_blood_pressure_risk = getRiskValue(vitalSigns.highBloodPressureRisk, "high_blood_pressure_risk", vitalSigns)
+	scanResult.high_fasting_glucose_risk = getRiskValue(vitalSigns.highFastingGlucoseRisk, "high_fasting_glucose_risk", vitalSigns)
+	scanResult.high_hemoglobin_a1c_risk = getRiskValue(vitalSigns.highHemoglobinA1CRisk, "high_hemoglobin_a1c_risk", vitalSigns)
+	scanResult.high_total_cholesterol_risk = getRiskValue(vitalSigns.highTotalCholesterolRisk, "high_total_cholesterol_risk", vitalSigns)
 
 	// Log detailed information about what was transformed
 	const enabledWithValues: string[] = []
 	const disabledWithValues: string[] = []
 	const missing: string[] = []
 
-	// Check each vital sign
+	// Check each vital sign (only the ones we're sending)
 	const vitalSignChecks = [
-		{ key: 'pulseRate', name: 'pulse_rate' },
-		{ key: 'respirationRate', name: 'respiration_rate' },
-		{ key: 'spo2', name: 'spo2' },
+		{ key: 'ascvdRisk', name: 'ascvd_risk' },
+		{ key: 'ascvdRiskLevel', name: 'ascvd_risk_level' },
 		{ key: 'bloodPressure', name: 'blood_pressure' },
-		{ key: 'sdnn', name: 'sdnn' },
-
+		{ key: 'cardiacWorkload', name: 'cardiac_workload' },
+		{ key: 'pulseRate', name: 'heart_rate' },
+		{ key: 'hemoglobin', name: 'hemoglobin' },
+		{ key: 'hemoglobinA1c', name: 'hemoglobin_a1c' },
+		{ key: 'lfhf', name: 'lf_hf_ratio' },
+		{ key: 'lowHemoglobinRisk', name: 'low_hemoglobin_risk' },
+		{ key: 'meanArterialPressure', name: 'mean_arterial_pressure' },
+		{ key: 'meanRri', name: 'mean_rri' },
+		{ key: 'normalizedStressIndex', name: 'normalized_stress_index' },
+		{ key: 'pnsIndex', name: 'pns_index' },
+		{ key: 'pnsZone', name: 'pns_zone' },
+		{ key: 'prq', name: 'prq' },
+		{ key: 'pulsePressure', name: 'pulse_pressure' },
+		{ key: 'respirationRate', name: 'respiration_rate' },
 		{ key: 'rmssd', name: 'rmssd' },
 		{ key: 'sd1', name: 'sd1' },
 		{ key: 'sd2', name: 'sd2' },
-		{ key: 'meanRri', name: 'mean_rri' },
-		{ key: 'rri', name: 'rri' },
-
-		{ key: 'lfhf', name: 'lf_hf_ratio' },
-		{ key: 'stressLevel', name: 'stress_level' },
-		{ key: 'stressIndex', name: 'stress_index' },
-		{ key: 'normalizedStressIndex', name: 'normalized_stress_index' },
-		{ key: 'wellnessIndex', name: 'wellness_index' },
-
-		{ key: 'wellnessLevel', name: 'wellness_level' },
+		{ key: 'sdnn', name: 'sdnn' },
 		{ key: 'snsIndex', name: 'sns_index' },
 		{ key: 'snsZone', name: 'sns_zone' },
-		{ key: 'pnsIndex', name: 'pns_index' },
-		{ key: 'pnsZone', name: 'pns_zone' },
-
-		{ key: 'prq', name: 'prq' },
-		{ key: 'hemoglobin', name: 'hemoglobin' },
-		{ key: 'hemoglobinA1c', name: 'hemoglobin_a1c' },
-		{ key: 'cardiacWorkload', name: 'cardiac_workload' },
-		{ key: 'meanArterialPressure', name: 'mean_arterial_pressure' },
-
-		{ key: 'pulsePressure', name: 'pulse_pressure' },
+		{ key: 'spo2', name: 'spo2' },
+		{ key: 'stressIndex', name: 'stress_index' },
+		{ key: 'stressLevel', name: 'stress_level' },
+		{ key: 'wellnessIndex', name: 'wellness_index' },
+		{ key: 'wellnessLevel', name: 'wellness_level' },
+		{ key: 'heartAge', name: 'heart_age' },
 		{ key: 'highBloodPressureRisk', name: 'high_blood_pressure_risk' },
 		{ key: 'highFastingGlucoseRisk', name: 'high_fasting_glucose_risk' },
 		{ key: 'highHemoglobinA1CRisk', name: 'high_hemoglobin_a1c_risk' },
-        
 		{ key: 'highTotalCholesterolRisk', name: 'high_total_cholesterol_risk' },
-		{ key: 'lowHemoglobinRisk', name: 'low_hemoglobin_risk' },
 	]
 
 	vitalSignChecks.forEach(({ key, name }) => {
@@ -451,13 +441,15 @@ export async function sendResultsToGaleAPI(
 		}
 
 		// Make API request
-		const endpoint = `${config.baseURL}/api/external/test_patient/scan/rppg/save`
-		// console.log("🚀 Sending POST request to GALE API...", {
-		// 	endpoint,
-		// 	method: "POST",
-		// 	hasapiToken: !!config.apiToken,
-		// 	apiTokenLength: config.apiToken.length,
-		// })
+		// Use sessionId as patient_Id in the endpoint
+		const patient_Id = results.sessionId
+		const endpoint = `${config.baseURL}/api/external/${patient_Id}/scan/rppg/save`
+		console.log("🚀 Sending POST request to GALE API...", {
+			endpoint,
+			method: "POST",
+			hasapiToken: !!config.apiToken,
+			apiTokenLength: config.apiToken.length,
+		})
 
 		const response = await fetch(endpoint, {
 			method: "POST",
@@ -468,14 +460,14 @@ export async function sendResultsToGaleAPI(
 			body: JSON.stringify(payload),
 		})
 
-		// console.log("📥 Received response from GALE API:", {
-		// 	status: response.status,
-		// 	statusText: response.statusText,
-		// 	ok: response.ok,
-		// 	headers: {
-		// 		contentType: response.headers.get("content-type"),
-		// 	}
-		// })
+		console.log("📥 Received response from GALE API:", {
+			status: response.status,
+			statusText: response.statusText,
+			ok: response.ok,
+			headers: {
+				contentType: response.headers.get("content-type"),
+			}
+		})
 
 		if (!response.ok) {
 			const errorText = await response.text().catch(() => "Unknown error")

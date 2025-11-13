@@ -15,6 +15,7 @@ import {
 } from "../types/api"
 import { LocalStorageAdapter } from "./adapters/localStorageAdapter"
 import { logMeasurementResults } from "./resultsLogger"
+import { transformMeasurementResultsToAPIFormat } from "../utils/apiDataTransformer"
 
 interface QHealthAPIConfig {
 	allowedOrigins: string[] | "*" // Origin whitelist
@@ -569,8 +570,9 @@ export class QHealthClientAPI {
 				})
 			}
 
-			// Broadcast MEASUREMENT_COMPLETE event
-			this.broadcastEvent("MEASUREMENT_COMPLETE", results, sessionId)
+			// Transform results to API format and broadcast
+			const apiFormat = transformMeasurementResultsToAPIFormat(results)
+			this.broadcastEvent("MEASUREMENT_COMPLETE", apiFormat, sessionId)
 		} catch (error) {
 			console.error("Failed to store measurement results:", error)
 			this.broadcastEvent(
@@ -582,6 +584,13 @@ export class QHealthClientAPI {
 				sessionId
 			)
 		}
+	}
+
+	/**
+	 * Get measurement results in API format (scan_result)
+	 */
+	getMeasurementResultsInAPIFormat(results: MeasurementResults) {
+		return transformMeasurementResultsToAPIFormat(results)
 	}
 }
 

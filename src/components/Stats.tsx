@@ -3,6 +3,21 @@ import React, { useMemo } from "react"
 import { VitalSigns } from "../types"
 import { cn } from "../lib/utils"
 import StatsBox from "./StatsBox"
+import CategorySection from "./CategorySection"
+import { getVitalSignInfo, getAllCategories } from "../data/vitalSignInfo"
+import {
+	calculateHighBloodPressureRisk,
+	calculateHighFastingGlucoseRisk,
+	calculateHighHbA1cRisk,
+	calculateHighTotalCholesterolRisk,
+	calculateLowHemoglobinRisk,
+	convertWellnessLevelToString,
+	convertStressLevelToString,
+	convertSNSIndexToZone,
+	convertZoneToString,
+	convertASCVDRiskToLevel,
+	type RiskLevel,
+} from "../utils/riskLevelCalculator"
 
 const Wrapper = ({
 	isMobile = false,
@@ -29,14 +44,6 @@ const Wrapper = ({
 	)
 }
 
-const BoxesWrapper = ({ children }: { children: React.ReactNode }) => {
-	return (
-		<div className="grid grid-cols-2 gap-5 w-full md:grid-cols-3 md:gap-6 lg:grid-cols-4 lg:gap-6">
-			{children}
-		</div>
-	)
-}
-
 interface IStats {
 	/**
 	 *  Object - contains health stats info
@@ -48,8 +55,8 @@ interface IStats {
 	isMobile?: boolean
 }
 
-// Helper function to format different value types
-const formatValue = (value: any, type: string): string => {
+// Helper function to format different value types matching API format
+const formatValue = (value: any, type: string, vitalSignKey: string, vitalSigns: VitalSigns): string => {
 	if (value === null || value === undefined) {
 		return "--"
 	}
@@ -61,111 +68,249 @@ const formatValue = (value: any, type: string): string => {
 			}
 			return "--"
 		case "rriArray":
-			// RRI is an array of RRIValue objects
 			if (Array.isArray(value) && value.length > 0) {
-				return `${value.length} values`
+				return `${value.length} intervals`
 			}
 			return "--"
 		case "percentage":
-			return typeof value === "number" ? `${value}%` : String(value)
+			return typeof value === "number" ? `${value.toFixed(1)}%` : String(value)
 		case "risk":
+			// Risk indicators should show text labels, not percentages
+			if (typeof value === "string") {
+				return value
+			}
 			if (typeof value === "number") {
-				return `${value}%`
+				// Calculate risk level based on the value
+				return calculateRiskLabel(vitalSignKey, value, vitalSigns)
 			}
 			return String(value)
 		case "zone":
+			// Zones should be lowercase strings
+			if (typeof value === "string") {
+				return value.toLowerCase()
+			}
+			// Convert SNS index to zone if needed
+			if (vitalSignKey === "snsZone" && vitalSigns.snsIndex?.value) {
+				const zone = convertSNSIndexToZone(vitalSigns.snsIndex.value as number)
+				return zone || String(value)
+			}
 			return String(value)
+		case "wellnessLevel":
+			// Convert wellness level number to string
+			if (typeof value === "number") {
+				const level = convertWellnessLevelToString(value)
+				return level || String(value)
+			}
+			return String(value)
+		case "stressLevel":
+			// Convert stress level to lowercase string
+			if (typeof value === "string") {
+				return value.toLowerCase()
+			}
+			const stressLevel = convertStressLevelToString(value)
+			return stressLevel || String(value)
 		case "number":
 		default:
-			return typeof value === "number" ? String(value) : String(value)
+			if (typeof value === "number") {
+				// Format to 1 decimal place for doubles
+				return value % 1 === 0 ? String(value) : value.toFixed(1)
+			}
+			return String(value)
 	}
 }
 
-// Configuration for all vital signs with display names and formatting
-const vitalSignsConfig = [
-	// Basic Vital Signs
-	{ key: "pulseRate", title: "PR", type: "number" },
-	{ key: "pulseRate", title: "HR", type: "number" },
-	{ key: "respirationRate", title: "RR", type: "number" },
-	{ key: "spo2", title: "SpO₂", type: "number" },
-	{ key: "bloodPressure", title: "BP", type: "bloodPressure" },
+// Calculate risk label for risk indicators
+function calculateRiskLabel(key: string, value: number | string, vitalSigns: VitalSigns): string {
+	switch (key) {
+		case "highBloodPressureRisk":
+			const bpRisk = calculateHighBloodPressureRisk(vitalSigns.bloodPressure?.value || null)
+			return bpRisk || String(value)
+		case "highHbA1cRisk":
+		case "highHemoglobinA1CRisk":
+			const hba1cRisk = calculateHighHbA1cRisk(vitalSigns.hemoglobinA1c?.value || null)
+			return hba1cRisk || String(value)
+		case "lowHemoglobinRisk":
+			const hbRisk = calculateLowHemoglobinRisk(vitalSigns.hemoglobin?.value || null)
+			return hbRisk || String(value)
+		case "highFastingGlucoseRisk":
+			const glucoseRisk = calculateHighFastingGlucoseRisk(value as number)
+			return glucoseRisk || String(value)
+		case "highTotalCholesterolRisk":
+			const cholRisk = calculateHighTotalCholesterolRisk(value as number)
+			return cholRisk || String(value)
+		default:
+			return String(value)
+	}
+}
 
-	// HRV Metrics
-	{ key: "sdnn", title: "SDNN", type: "number" },
-	{ key: "rmssd", title: "RMSSD", type: "number" },
-	{ key: "sd1", title: "SD1", type: "number" },
-	{ key: "sd2", title: "SD2", type: "number" },
-	{ key: "meanRri", title: "Mean RRi", type: "number" },
-	{ key: "rri", title: "RRi", type: "rriArray" }, // Array type
-	{ key: "lfhf", title: "LF/HF Ratio", type: "number" },
-
-	// Stress & Wellness
-	{ key: "stressLevel", title: "SL", type: "number" },
-	{ key: "stressIndex", title: "Stress Index", type: "number" },
-	{ key: "normalizedStressIndex", title: "NSI", type: "number" },
-	{ key: "wellnessIndex", title: "Wellness Index", type: "number" },
-	{ key: "wellnessLevel", title: "Wellness Level", type: "number" },
-
-	// Nervous System
-	{ key: "snsIndex", title: "SNS Index", type: "number" },
-	{ key: "snsZone", title: "SNS Zone", type: "zone" },
-	{ key: "pnsIndex", title: "PNS Index", type: "number" },
-	{ key: "pnsZone", title: "PNS Zone", type: "zone" },
-
-	// Other Metrics
-	{ key: "prq", title: "PRQ", type: "number" },
-	// { key: 'heartAge', title: 'Heart Age', type: 'number' },
-	{ key: "hemoglobin", title: "Hemoglobin", type: "number" },
-	{ key: "hemoglobinA1c", title: "HbA1c", type: "number" },
-	{ key: "cardiacWorkload", title: "Cardiac Workload", type: "number" },
-	{ key: "meanArterialPressure", title: "Mean Arterial Pressure", type: "number" },
-	{ key: "pulsePressure", title: "Pulse Pressure", type: "number" },
-
-	// Risk Indicators
-	// { key: 'ascvdRisk', title: 'ASCVD Risk', type: 'risk' },
-	// { key: 'ascvdRiskLevel', title: 'ASCVD Risk Level', type: 'risk' },
-	{ key: "highBloodPressureRisk", title: "High BP Risk", type: "risk" },
-	{ key: "highFastingGlucoseRisk", title: "High Glucose Risk", type: "risk" },
-	{ key: "highHemoglobinA1CRisk", title: "High HbA1c Risk", type: "risk" },
-	{ key: "highTotalCholesterolRisk", title: "High Cholesterol Risk", type: "risk" },
-	{ key: "lowHemoglobinRisk", title: "Low Hemoglobin Risk", type: "risk" },
-]
-
-const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
-	const statsToDisplay = useMemo(() => {
-		const stats = vitalSignsConfig.map((config) => {
-			const vitalSign = vitalSigns[config.key as keyof VitalSigns]
-
-			// If vital sign doesn't exist, show it as disabled
-			if (!vitalSign) {
-				return {
-					...config,
-					value: "N/A",
-					isEnabled: false,
+// Get risk level for a vital sign
+function getRiskLevel(key: string, vitalSigns: VitalSigns): RiskLevel | null {
+	switch (key) {
+		case "highBloodPressureRisk":
+			return calculateHighBloodPressureRisk(vitalSigns.bloodPressure?.value || null)
+		case "highHbA1cRisk":
+		case "highHemoglobinA1CRisk":
+			return calculateHighHbA1cRisk(vitalSigns.hemoglobinA1c?.value || null)
+		case "lowHemoglobinRisk":
+			return calculateLowHemoglobinRisk(vitalSigns.hemoglobin?.value || null)
+		case "highFastingGlucoseRisk":
+			return calculateHighFastingGlucoseRisk(
+				vitalSigns.highFastingGlucoseRisk?.value as number | null
+			)
+		case "highTotalCholesterolRisk":
+			return calculateHighTotalCholesterolRisk(
+				vitalSigns.highTotalCholesterolRisk?.value as number | null
+			)
+		case "wellnessLevel":
+			const wellnessValue = vitalSigns.wellnessLevel?.value as number | null
+			if (wellnessValue !== null && wellnessValue !== undefined) {
+				const level = convertWellnessLevelToString(wellnessValue)
+				return (level as RiskLevel) || null
+			}
+			return null
+		case "ascvdRiskLevel":
+			const ascvdRisk = vitalSigns.ascvdRisk?.value as number | null
+			if (ascvdRisk !== null && ascvdRisk !== undefined) {
+				const level = convertASCVDRiskToLevel(ascvdRisk)
+				if (level) {
+					return (level.charAt(0).toUpperCase() + level.slice(1) as RiskLevel) || null
 				}
 			}
+			return null
+		default:
+			return null
+	}
+}
 
-			const displayValue = vitalSign.isEnabled
-				? formatValue(vitalSign.value, config.type)
+const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
+	const categorizedStats = useMemo(() => {
+		const categories = getAllCategories()
+		const result: Record<string, Array<{
+			key: string
+			title: string
+			fullName: string
+			unit: string
+			value: string
+			isEnabled: boolean
+			riskLevel: RiskLevel | null
+			icon: React.ComponentType<{ className?: string; size?: number }>
+		}>> = {}
+
+		// Initialize categories
+		categories.forEach((category) => {
+			result[category] = []
+		})
+
+		// Process each vital sign
+		const allVitalSignKeys = [
+			"pulseRate",
+			"respirationRate",
+			"spo2",
+			"bloodPressure",
+			"sdnn",
+			"rmssd",
+			"sd1",
+			"sd2",
+			"meanRri",
+			"rri",
+			"lfhf",
+			"stressLevel",
+			"stressIndex",
+			"normalizedStressIndex",
+			"wellnessIndex",
+			"wellnessLevel",
+			"snsIndex",
+			"snsZone",
+			"pnsIndex",
+			"pnsZone",
+			"prq",
+			"hemoglobin",
+			"hemoglobinA1c",
+			"cardiacWorkload",
+			"meanArterialPressure",
+			"pulsePressure",
+			"highBloodPressureRisk",
+			"highFastingGlucoseRisk",
+			"highHemoglobinA1CRisk",
+			"highTotalCholesterolRisk",
+			"lowHemoglobinRisk",
+			"ascvdRisk",
+			"ascvdRiskLevel",
+			"heartAge",
+		]
+
+		allVitalSignKeys.forEach((key) => {
+			const vitalSign = vitalSigns[key as keyof VitalSigns]
+			const info = getVitalSignInfo(key)
+
+			if (!info) {
+				return
+			}
+
+			// Determine value type
+			let valueType = "number"
+			if (key === "bloodPressure") valueType = "bloodPressure"
+			if (key === "rri") valueType = "rriArray"
+			if (key === "wellnessLevel") valueType = "wellnessLevel"
+			if (key === "stressLevel") valueType = "stressLevel"
+			if (["snsZone", "pnsZone"].includes(key)) valueType = "zone"
+			if (key.includes("Risk")) valueType = "risk"
+			if (key === "ascvdRisk") valueType = "percentage"
+			if (key === "ascvdRiskLevel") valueType = "zone"
+
+			const displayValue = vitalSign?.isEnabled
+				? formatValue(vitalSign.value, valueType, key, vitalSigns)
 				: "N/A"
 
-			return {
-				...config,
-				value: displayValue,
-				isEnabled: vitalSign.isEnabled,
+			const riskLevel = getRiskLevel(key, vitalSigns)
+
+			const category = result[info.category]
+			if (category) {
+				category.push({
+					key,
+					title: info.fullName,
+					fullName: info.fullName,
+					unit: info.unit,
+					value: displayValue,
+					isEnabled: vitalSign?.isEnabled || false,
+					riskLevel,
+					icon: info.icon,
+				})
 			}
 		})
 
-		return stats
+		// Remove empty categories
+		Object.keys(result).forEach((categoryKey) => {
+			const category = result[categoryKey]
+			if (category && category.length === 0) {
+				delete result[categoryKey]
+			}
+		})
+
+		return result
 	}, [vitalSigns])
 
 	return (
 		<Wrapper isMobile={isMobile}>
-			<BoxesWrapper>
-				{statsToDisplay.map((stat) => (
-					<StatsBox key={stat.key} title={stat.title} value={stat.value} />
+			<div className="w-full space-y-6">
+				{Object.entries(categorizedStats).map(([category, stats]) => (
+					<CategorySection key={category} category={category} count={stats.length}>
+						<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+							{stats.map((stat) => (
+								<StatsBox
+									key={stat.key}
+									title={stat.title}
+									fullName={stat.fullName}
+									value={stat.value}
+									unit={stat.unit}
+									riskLevel={stat.riskLevel}
+									icon={stat.icon}
+								/>
+							))}
+						</div>
+					</CategorySection>
 				))}
-			</BoxesWrapper>
+			</div>
 		</Wrapper>
 	)
 }

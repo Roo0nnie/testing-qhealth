@@ -1,0 +1,234 @@
+import { BloodPressureValue, VitalSigns } from "../types"
+
+export type RiskLevel = "Low" | "Medium" | "High"
+export type ASCVDRiskCategory = "Below 1%" | "Between 1%-30%" | "Above 30%"
+export type ASCVDRiskLevel = "low" | "medium" | "high"
+export type StressLevelString = "low" | "normal" | "mild" | "high" | "veryhigh"
+export type ZoneString = "low" | "normal" | "high"
+
+/**
+ * Calculate High Blood Pressure Risk level
+ */
+export function calculateHighBloodPressureRisk(
+	bloodPressure: BloodPressureValue | null
+): RiskLevel | null {
+	if (!bloodPressure || !bloodPressure.systolic || !bloodPressure.diastolic) {
+		return null
+	}
+
+	const { systolic, diastolic } = bloodPressure
+
+	// High: Systolic >= 140 OR Diastolic >= 95
+	if (systolic >= 140 || diastolic >= 95) {
+		return "High"
+	}
+
+	// Medium: Systolic 129-139 OR Diastolic 90-94
+	if ((systolic >= 129 && systolic <= 139) || (diastolic >= 90 && diastolic <= 94)) {
+		return "Medium"
+	}
+
+	// Low: Systolic < 129 AND Diastolic < 90
+	return "Low"
+}
+
+/**
+ * Calculate High HbA1c Risk level
+ */
+export function calculateHighHbA1cRisk(hemoglobinA1c: number | null): RiskLevel | null {
+	if (hemoglobinA1c === null || hemoglobinA1c === undefined) {
+		return null
+	}
+
+	if (hemoglobinA1c >= 6.5) {
+		return "High"
+	}
+	if (hemoglobinA1c >= 6 && hemoglobinA1c < 6.5) {
+		return "Medium"
+	}
+	return "Low"
+}
+
+/**
+ * Calculate Low Hemoglobin Risk level
+ */
+export function calculateLowHemoglobinRisk(hemoglobin: number | null): RiskLevel | null {
+	if (hemoglobin === null || hemoglobin === undefined) {
+		return null
+	}
+
+	if (hemoglobin < 12.0) {
+		return "High"
+	}
+	return "Low"
+}
+
+/**
+ * Calculate High Fasting Glucose Risk level
+ */
+export function calculateHighFastingGlucoseRisk(glucose: number | null): RiskLevel | null {
+	if (glucose === null || glucose === undefined) {
+		return null
+	}
+
+	if (glucose > 100) {
+		return "High"
+	}
+	return "Low"
+}
+
+/**
+ * Calculate High Total Cholesterol Risk level
+ */
+export function calculateHighTotalCholesterolRisk(cholesterol: number | null): RiskLevel | null {
+	if (cholesterol === null || cholesterol === undefined) {
+		return null
+	}
+
+	if (cholesterol >= 240) {
+		return "High"
+	}
+	if (cholesterol >= 201 && cholesterol <= 240) {
+		return "Medium"
+	}
+	return "Low"
+}
+
+/**
+ * Convert wellness level number to string
+ * 1-4 = Low, 5-7 = Medium, 8-10 = High
+ */
+export function convertWellnessLevelToString(wellnessLevel: number | null): string | null {
+	if (wellnessLevel === null || wellnessLevel === undefined) {
+		return null
+	}
+
+	if (wellnessLevel >= 1 && wellnessLevel <= 4) {
+		return "Low"
+	}
+	if (wellnessLevel >= 5 && wellnessLevel <= 7) {
+		return "Medium"
+	}
+	if (wellnessLevel >= 8 && wellnessLevel <= 10) {
+		return "High"
+	}
+
+	return null
+}
+
+/**
+ * Convert ASCVD Risk percentage to category string
+ */
+export function convertASCVDRiskToCategory(ascvdRisk: number | null): ASCVDRiskCategory | null {
+	if (ascvdRisk === null || ascvdRisk === undefined) {
+		return null
+	}
+
+	if (ascvdRisk < 1) {
+		return "Below 1%"
+	}
+	if (ascvdRisk >= 1 && ascvdRisk <= 30) {
+		return "Between 1%-30%"
+	}
+	return "Above 30%"
+}
+
+/**
+ * Convert ASCVD Risk percentage to level string
+ * Low: up to 10%, Medium: 10%-20% (inclusive), High: above 20%
+ */
+export function convertASCVDRiskToLevel(ascvdRisk: number | null): ASCVDRiskLevel | null {
+	if (ascvdRisk === null || ascvdRisk === undefined) {
+		return null
+	}
+
+	if (ascvdRisk <= 10) {
+		return "low"
+	}
+	if (ascvdRisk > 10 && ascvdRisk <= 20) {
+		return "medium"
+	}
+	return "high"
+}
+
+/**
+ * Convert stress level to lowercase string
+ */
+export function convertStressLevelToString(stressLevel: number | string | null): StressLevelString | null {
+	if (stressLevel === null || stressLevel === undefined) {
+		return null
+	}
+
+	if (typeof stressLevel === "string") {
+		const lower = stressLevel.toLowerCase()
+		if (["low", "normal", "mild", "high", "veryhigh"].includes(lower)) {
+			return lower as StressLevelString
+		}
+	}
+
+	// If it's a number, we might need to map it (this depends on SDK implementation)
+	// For now, return null if it's not a recognized string
+	return null
+}
+
+/**
+ * Convert SNS index to zone string
+ * high when 1+, normal when 0, low when -1
+ */
+export function convertSNSIndexToZone(snsIndex: number | null): ZoneString | null {
+	if (snsIndex === null || snsIndex === undefined) {
+		return null
+	}
+
+	if (snsIndex >= 1) {
+		return "high"
+	}
+	if (snsIndex === 0) {
+		return "normal"
+	}
+	if (snsIndex <= -1) {
+		return "low"
+	}
+
+	return null
+}
+
+/**
+ * Convert zone value to lowercase string
+ */
+export function convertZoneToString(zone: number | string | null): ZoneString | null {
+	if (zone === null || zone === undefined) {
+		return null
+	}
+
+	if (typeof zone === "string") {
+		const lower = zone.toLowerCase()
+		if (["low", "normal", "high"].includes(lower)) {
+			return lower as ZoneString
+		}
+	}
+
+	// If it's a number, return null (zones should be strings)
+	return null
+}
+
+/**
+ * Get risk level color for display
+ */
+export function getRiskLevelColor(riskLevel: RiskLevel | null): string {
+	if (!riskLevel) {
+		return "gray"
+	}
+
+	switch (riskLevel) {
+		case "Low":
+			return "green"
+		case "Medium":
+			return "yellow"
+		case "High":
+			return "red"
+		default:
+			return "gray"
+	}
+}
+
