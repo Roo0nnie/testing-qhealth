@@ -1,195 +1,165 @@
-# QHealth Web Application: GALE API Integration Guide
+# QHealth Camera Scan URL Integration Guide for Third-Party React Native Apps
 
-This guide provides a complete, step-by-step documentation on how the QHealth web application sends measurement data to the GALE External API endpoint. The integration handles data transformation, validation, and secure transmission of vital signs and health metrics.
+This guide documents how to integrate the QHealth camera scanning URL into your React Native application and receive scan results at your GALE API endpoint.
 
 ## Overview
 
-The QHealth application integrates with the GALE External API to send health scan results after completing a measurement session. The integration is implemented in `src/services/galeExternalAPI.ts` and handles:
+QHealth provides a web-based camera scanning URL that performs health measurements using rPPG (remote photoplethysmography) technology. After a user completes a scan, the results are sent directly to your GALE API endpoint. Your React Native app will open this URL using InAppBrowser.
 
-- Configuration management via environment variables
-- Data transformation from internal format to GALE API format
-- Request validation and error handling
-- Secure API communication with authentication
+### Key Points:
+
+- We provide you with a dedicated scanning URL (pre-configured with your API details)
+- Scan results are posted directly to your endpoint
+- The integration works entirely within InAppBrowser - no native modules required
 
 ## Prerequisites
 
-Before integrating or modifying the GALE API integration, ensure you have:
+Before integration, ensure you have:
 
-- **Node.js** (version 20 or higher): Required for the web application runtime
-- **Environment Variables**: Configured with GALE API credentials
-- **GALE API Access**: Valid API token and base URL from GALE
-- **Understanding of TypeScript/React**: The codebase uses TypeScript and React
+- **React Native InAppBrowser:** Installed and configured
+  ```bash
+  npm install react-native-inappbrowser-reborn
+  ```
+- **GALE API Endpoint Ready:** Your POST endpoint must be able to:
+  - Receive JSON payloads
+  - Validate API key authentication
+  - Return JSON responses
+- **Camera & Internet Permissions:** Your app must request camera permissions, and the device must maintain internet connection during scanning
 
-## Step 1: Environment Configuration
+## Step 1: Scanning URL Provided by QHealth
 
-The GALE API integration reads configuration from environment variables. Set up the following variables:
+We will provide you with the following pre-configured scanning URL:
 
-### Required Environment Variables
+**Base URL:**
 
-```bash
-GALE_API_BASE_URL=https://dev-external-api-gale.mangobeach-5e679f1c.southeastasia.azurecontainerapps.io
-GALE_API_KEY=your_api_token_here
-GALE_SCAN_SOURCE_SYSTEM_NAME=QHealth System
-GALE_SCAN_SOURCE_PUBLISHER=QHealth
-GALE_API_ENABLED=true
+```
+https://qhealth-webbased.quanbyit.com/
 ```
 
-### Configuration Details
+**Usage with Session ID (Recommended):**
 
-- **GALE_API_BASE_URL**: The base URL of the GALE External API (without trailing slash)
-- **GALE_API_KEY**: Authentication token for API access
-- **GALE_SCAN_SOURCE_SYSTEM_NAME**: System identifier (defaults to "QHealth System")
-- **GALE_SCAN_SOURCE_PUBLISHER**: Publisher identifier (defaults to "QHealth")
-- **GALE_API_ENABLED**: Enable/disable API integration (defaults to `true` if not set)
+```
+https://qhealth-webbased.quanbyit.com/?session={your-unique-session-id}
+```
 
-### Configuration Loading
+**URL Parameters:**
 
-The `getGaleAPIConfig()` function loads configuration from environment variables:
+- `session` (required): Your unique identifier for tracking scans
 
-```typescript
-function getGaleAPIConfig(): GaleAPIConfig | null {
-  const baseURL = process.env.GALE_API_BASE_URL
-  const apiToken = process.env.GALE_API_KEY
-  const systemName = process.env.GALE_SCAN_SOURCE_SYSTEM_NAME || "QHealth System"
-  const publisher = process.env.GALE_SCAN_SOURCE_PUBLISHER || "QHealth"
-  const enabled = process.env.GALE_API_ENABLED !== "false"
-  
-  // Returns configuration object or null if missing required values
+The URL is already configured with your GALE API endpoint, API key, and system identifiers (as previously provided to us)
+
+> **Security Note:** Your API credentials are stored securely on our servers and never exposed in the URL or client-side code.
+
+## Step 2: Implement InAppBrowser Integration
+
+Open the scanning URL in your React Native app:
+
+```javascript
+import { InAppBrowser } from "react-native-inappbrowser-reborn";
+
+async function openHealthScan(sessionId: string) {
+  try {
+    const url = `https://qhealth-webbased.quanbyit.com/?session=${sessionId}`;
+
+    await InAppBrowser.open(url, {
+      // iOS
+      dismissButtonStyle: "cancel",
+      preferredBarTintColor: "#453AA4",
+      preferredControlTintColor: "white",
+
+      // Android
+      showTitle: true,
+      toolbarColor: "#453AA4",
+      secondaryToolbarColor: "white",
+
+      // Universal
+      enableUrlBarHiding: true,
+      enableDefaultShare: false,
+      forceCloseOnRedirection: false,
+
+      // Important: Wait for completion
+      animations: {
+        startEnter: "slide_in_right",
+        startExit: "slide_out_left",
+        endEnter: "slide_in_left",
+        endExit: "slide_out_right",
+      },
+    });
+
+    // Browser closed - scan completed or cancelled
+    console.log("Scan session ended");
+  } catch (error) {
+    console.error("Error opening scan:", error);
+  }
 }
 ```
 
-**Note**: The implementation includes a fallback configuration for development/testing purposes. Remove this in production.
+### Important Considerations:
 
-## Step 2: Data Flow Overview
+- The scan runs entirely in the web view
+- Users need camera permissions (browser will prompt)
+- Internet connection is required throughout the scan
+- Do not add custom headers - authentication is handled internally
 
-The data flow from measurement completion to GALE API follows these steps:
+## Step 3: Data Received at Your Endpoint
 
-1. **Measurement Completion**: User completes a health scan in the QHealth application
-2. **Data Collection**: Vital signs and health metrics are collected in `MeasurementResults` format
-3. **Data Transformation**: Internal `VitalSigns` format is transformed to GALE API format
-4. **Validation**: Payload is validated for required fields and data presence
-5. **API Request**: POST request is sent to GALE API endpoint
-6. **Response Handling**: Success or error response is processed
+After scan completion, your GALE API endpoint will receive a POST request:
 
-## Step 3: Data Transformation
+**Endpoint**
 
-The `transformVitalSignsToGaleFormat()` function converts internal `VitalSigns` structure to the flat JSON format required by GALE API.
+```
+POST {your-base-url}/api/external/test_patient/scan/rppg/save
+```
 
-### Internal Data Structure
+**Headers**
 
-The application uses a structured format where each vital sign has:
-- `value`: The actual measurement value (can be number, string, object, or null)
-- `isEnabled`: Boolean indicating if the vital sign is enabled/available
-- `confidenceLevel`: Optional confidence metric for certain vital signs
+```
+Content-Type: application/json
+x-api-key: {your-api-key}
+```
 
-### Transformation Process
-
-1. **Initialize Result Object**: Creates a `scanResult` object with all GALE API fields initialized to `null`
-2. **Extract Values**: Uses helper functions to extract values from `VitalSign` objects
-3. **Type Conversion**: Converts values to appropriate types (numbers, percentage strings)
-4. **Handle Special Cases**: Processes complex types like blood pressure (systolic/diastolic split)
-
-### Helper Functions
-
-- **`getValue()`**: Extracts value from `VitalSign`, returns `null` if not enabled or missing
-- **`getNumericValue()`**: Converts value to number, handles string-to-number conversion
-- **`getRiskValue()`**: Formats risk values as percentage strings (e.g., `1` → `"1%"`)
-
-### Field Mapping
-
-The transformation maps internal field names to GALE API field names:
-
-| Internal Field | GALE API Field | Type |
-|---------------|----------------|------|
-| `pulseRate` | `pulse_rate` | number |
-| `respirationRate` | `respiration_rate` | number |
-| `spo2` | `spo2` | number |
-| `bloodPressure` | `blood_pressure_systolic`, `blood_pressure_diastolic` | number, number |
-| `sdnn` | `sdnn` | number |
-| `rmssd` | `rmssd` | number |
-| `sd1` | `sd1` | number |
-| `sd2` | `sd2` | number |
-| `meanRri` | `mean_rri` | number |
-| `rri` | `rri` | array |
-| `lfhf` | `lf_hf_ratio` | number |
-| `stressLevel` | `stress_level` | number |
-| `stressIndex` | `stress_index` | number |
-| `normalizedStressIndex` | `normalized_stress_index` | number |
-| `wellnessIndex` | `wellness_index` | number |
-| `wellnessLevel` | `wellness_level` | number |
-| `snsIndex` | `sns_index` | number |
-| `snsZone` | `sns_zone` | string/number |
-| `pnsIndex` | `pns_index` | number |
-| `pnsZone` | `pns_zone` | string/number |
-| `prq` | `prq` | number |
-| `heartAge` | `heart_age` | number |
-| `hemoglobin` | `hemoglobin` | number |
-| `hemoglobinA1c` | `hemoglobin_a1c` | number |
-| `cardiacWorkload` | `cardiac_workload` | number |
-| `meanArterialPressure` | `mean_arterial_pressure` | number |
-| `pulsePressure` | `pulse_pressure` | number |
-| `ascvdRisk` | `ascvd_risk` | string (percentage) |
-| `ascvdRiskLevel` | `ascvd_risk_level` | string |
-| `highBloodPressureRisk` | `high_blood_pressure_risk` | string (percentage) |
-| `highFastingGlucoseRisk` | `high_fasting_glucose_risk` | string (percentage) |
-| `highHemoglobinA1CRisk` | `high_hemoglobin_a1c_risk` | string (percentage) |
-| `highTotalCholesterolRisk` | `high_total_cholesterol_risk` | string (percentage) |
-| `lowHemoglobinRisk` | `low_hemoglobin_risk` | string (percentage) |
-
-### Confidence Levels
-
-Confidence levels are included when available:
-- `pulse_rate_confidence`
-- `respiration_rate_confidence`
-- `sdnn_confidence`
-- `mean_rri_confidence`
-- `prq_confidence`
-
-## Step 4: Request Format
-
-The GALE API expects a POST request with the following JSON structure:
+**Payload Structure**
 
 ```json
 {
   "scan_source_id": "27baa931-df23-4d18-bdb6-713acc529c88",
-  "scan_source_system_name": "QHealth System",
-  "scan_source_publisher": "QHealth",
+  "scan_source_system_name": "YourHealth System",
+  "scan_source_publisher": "YourCompany",
   "scan_result": {
     "pulse_rate": 89,
     "respiration_rate": 15,
-    "spo2": null,
-    "blood_pressure_systolic": 110,
-    "blood_pressure_diastolic": 70,
-    "sdnn": null,
-    "rmssd": null,
-    "sd1": null,
-    "sd2": null,
-    "mean_rri": null,
-    "rri": null,
-    "lf_hf_ratio": null,
-    "stress_level": null,
-    "stress_index": null,
-    "normalized_stress_index": null,
-    "wellness_index": 7,
-    "wellness_level": 2,
-    "sns_index": null,
-    "sns_zone": null,
-    "pns_index": null,
-    "pns_zone": null,
-    "prq": 5.8,
-    "hemoglobin": 12.5,
+    "spo2": 12,
+    "blood Pressure": '110/70',
+    "sdnn": 12,
+    "rmssd": 12,
+    "sd1": 12,
+    "sd2": 12,
+    "mean_rri": 12,
+    "rri": [800, 810, 805],
+    "lf_hf_ratio": 12,
+    "stress_level":"low",
+    "stress_index": 12,
+    "normalized_stress_index":12,,,
+    "wellness_index": 7, 
+    "wellness_level": "Low",
+    "sns_index": 1,
+    "sns_zone": "low",
+    "pns_index":12 ,
+    "pns_zone": "low",
+    "prq": 5.8, 
+    "hemoglobin": 12.5, 
     "hemoglobin_a1c": 6.46,
     "cardiac_workload": 3.99,
-    "mean_arterial_pressure": 83,
+    "mean_arterial_pressure": 83, 
     "pulse_pressure": 40,
-    "high_blood_pressure_risk": "1%",
-    "high_fasting_glucose_risk": "3%",
-    "high_hemoglobin_a1c_risk": "3%",
-    "high_total_cholesterol_risk": "2%",
-    "low_hemoglobin_risk": "1%",
-    "heart_age": null,
-    "ascvd_risk": null,
-    "ascvd_risk_level": null,
+    "high_blood_pressure_risk": "Medium",
+    "high_fasting_glucose_risk":"High",
+    "high_hemoglobin_a1c_risk":  "High",
+    "high_total_cholesterol_risk": "High",
+    "low_hemoglobin_risk": "Low",
+    "heart_age":23,
+    "ascvd_risk": 12,
+    "ascvd_risk_level": medium,
     "pulse_rate_confidence": 1,
     "respiration_rate_confidence": 2,
     "prq_confidence": 1
@@ -197,216 +167,26 @@ The GALE API expects a POST request with the following JSON structure:
 }
 ```
 
-### Request Payload Structure
+### Field Descriptions
 
-- **`scan_source_id`**: Unique session identifier (UUID format)
-- **`scan_source_system_name`**: System name identifier
-- **`scan_source_publisher`**: Publisher identifier
-- **`scan_result`**: Object containing all vital signs and health metrics
+**Top-Level Metadata:**
 
-### Field Value Types
+- `scan_source_id`: Unique session ID for tracking
+- `scan_source_system_name`: Your system name (as you provided)
+- `scan_source_publisher`: Your publisher name (as you provided)
 
-- **Numbers**: Numeric values for measurements (e.g., `pulse_rate: 89`)
-- **Null**: Fields with no data are set to `null`
-- **Percentage Strings**: Risk values formatted as strings with `%` (e.g., `"1%"`)
-- **Arrays**: RRI data sent as array when available
-- **Confidence Levels**: Integer values (1, 2, etc.) indicating measurement confidence
+**Vital Sign Fields (in scan_result):**
 
-## Step 5: API Request Implementation
+- Always numeric or null: Values are numbers or null if not measured
+- Risk percentages: String format with % (e.g., "1%")
+- Confidence levels: Integer values (typically 1-3)
+- Blood pressure: Split into systolic and diastolic fields
 
-The `sendResultsToGaleAPI()` function handles the complete API request flow:
+## Step 4: Response Format
 
-### Function Signature
+Your endpoint must return a JSON response to acknowledge receipt:
 
-```typescript
-export async function sendResultsToGaleAPI(
-  results: MeasurementResults
-): Promise<{ success: boolean; error?: string }>
-```
-
-### Request Flow
-
-1. **Configuration Check**: Validates GALE API configuration is available and enabled
-2. **Input Validation**: Ensures `sessionId` and `vitalSigns` are present
-3. **Data Transformation**: Converts `VitalSigns` to GALE format
-4. **Data Validation**: Verifies at least one field has a non-null value
-5. **Payload Construction**: Builds the request payload object
-6. **API Request**: Sends POST request to GALE endpoint
-7. **Response Processing**: Handles success and error responses
-
-### API Endpoint
-
-```
-POST {baseURL}/api/external/test_patient/scan/rppg/save
-```
-
-### Request Headers
-
-```typescript
-{
-  "Content-Type": "application/json",
-  "x-api-key": "{apiToken}"
-}
-```
-
-### Implementation Code
-
-```typescript
-const endpoint = `${config.baseURL}/api/external/test_patient/scan/rppg/save`
-
-const response = await fetch(endpoint, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "x-api-key": config.apiToken,
-  },
-  body: JSON.stringify(payload),
-})
-```
-
-## Step 6: Error Handling
-
-The integration includes comprehensive error handling:
-
-### Validation Errors
-
-- **Missing Configuration**: Returns `{ success: false, error: "GALE API not configured" }`
-- **Missing Session ID**: Throws error if `sessionId` is empty
-- **Missing Vital Signs**: Throws error if `vitalSigns` is not provided
-- **No Data Available**: Returns error if all scan result fields are `null`
-
-### API Errors
-
-- **HTTP Errors**: Catches non-OK responses and extracts error messages
-- **JSON Parse Errors**: Handles malformed JSON responses gracefully
-- **Network Errors**: Catches fetch failures and connection issues
-
-### Error Response Format
-
-```typescript
-{
-  success: false,
-  error: "Error message describing what went wrong"
-}
-```
-
-**Note**: Errors are caught and returned without throwing to prevent blocking the user experience. The function fails silently to allow the application to continue functioning even if GALE API is unavailable.
-
-## Step 7: Integration Points
-
-### Where It's Called
-
-The `sendResultsToGaleAPI()` function is called from:
-
-- **`src/components/Monitor.tsx`**: After measurement completion and data collection
-
-### Integration Code Example
-
-```typescript
-import { sendResultsToGaleAPI } from "../services/galeExternalAPI"
-
-// After measurement completes
-const measurementResults: MeasurementResults = {
-  sessionId: sessionId,
-  vitalSigns: finalVitalSigns,
-  timestamp: Date.now(),
-}
-
-await sendResultsToGaleAPI(measurementResults)
-```
-
-### Integration with inappbrowser
-
-When the QHealth application is embedded in a React Native app using **inappbrowser** (react-native-inappbrowser-reborn), the web application runs inside Chrome Custom Tabs. The GALE API integration works seamlessly in this environment:
-
-1. **Measurement Execution**: User performs health scan in the embedded web view
-2. **Data Collection**: Vital signs are collected during the scan
-3. **API Transmission**: Data is sent to GALE API using standard fetch API
-4. **Response Handling**: Success/error responses are processed
-
-The inappbrowser environment provides full web API support, including:
-- Fetch API for HTTP requests
-- JSON parsing and stringification
-- Environment variable access (via webpack DefinePlugin or dotenv)
-
-## Step 8: Testing the Integration
-
-### Manual Testing Steps
-
-1. **Configure Environment**: Set up all required environment variables
-2. **Start Application**: Launch the QHealth web application
-3. **Perform Measurement**: Complete a health scan session
-4. **Monitor Network**: Check browser DevTools Network tab for API request
-5. **Verify Payload**: Confirm request payload matches expected format
-6. **Check Response**: Verify successful response from GALE API
-
-### Testing Checklist
-
-- [ ] Environment variables are correctly configured
-- [ ] API endpoint URL is correct
-- [ ] API token is valid and has proper permissions
-- [ ] Request payload contains all required fields
-- [ ] Data transformation correctly maps all vital signs
-- [ ] Error handling works for various failure scenarios
-- [ ] Response is properly processed
-
-### Debugging
-
-Enable console logging (uncomment console.log statements in `galeExternalAPI.ts`) to debug:
-
-- Configuration loading
-- Data transformation process
-- Request payload structure
-- API response details
-- Error messages
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-- **"GALE API not configured" Error**:
-  - Verify environment variables are set correctly
-  - Check that `GALE_API_ENABLED` is not set to `"false"`
-  - Ensure `GALE_API_BASE_URL` and `GALE_API_KEY` are provided
-
-- **"No vital signs data available to send" Error**:
-  - Verify measurement completed successfully
-  - Check that at least one vital sign has a non-null value
-  - Ensure vital signs are enabled (`isEnabled: true`)
-
-- **API Request Fails with 401/403**:
-  - Verify API token is correct and not expired
-  - Check that `x-api-key` header is being sent
-  - Confirm API token has proper permissions
-
-- **API Request Fails with 400**:
-  - Validate request payload structure matches expected format
-  - Check that required fields (`scan_source_id`, `scan_source_system_name`, `scan_source_publisher`) are present
-  - Verify data types match expected format (numbers vs strings)
-
-- **Network Errors**:
-  - Check internet connectivity
-  - Verify API endpoint URL is accessible
-  - Check for CORS issues (should not occur with proper API configuration)
-
-- **Data Transformation Issues**:
-  - Verify internal `VitalSigns` structure matches expected format
-  - Check that helper functions are correctly extracting values
-  - Ensure special cases (blood pressure, risk values) are handled correctly
-
-### Additional Tips
-
-- **Environment Variables**: Use `.env` file for local development, configure in deployment platform (Vercel, etc.) for production
-- **API Token Security**: Never commit API tokens to version control
-- **Error Logging**: Consider implementing proper logging service for production error tracking
-- **Retry Logic**: For production, consider adding retry logic for transient failures
-- **Rate Limiting**: Be aware of GALE API rate limits if applicable
-
-## Response Format
-
-### Success Response
-
-The GALE API returns a JSON response on success:
+**Success Response (200 OK)**
 
 ```json
 {
@@ -415,41 +195,127 @@ The GALE API returns a JSON response on success:
 }
 ```
 
-### Error Response
-
-Error responses may include:
+**Error Response**
 
 ```json
 {
   "success": false,
-  "error": "Error message",
-  "details": "Additional error details"
+  "error": "Error description",
+  "details": "Additional details (optional)"
 }
 ```
 
-## Security Considerations
+**HTTP Status Codes**
 
-1. **API Token Protection**: API tokens are stored in environment variables and never exposed in client-side code
-2. **HTTPS Only**: All API requests use HTTPS for secure transmission
-3. **Input Validation**: All input data is validated before sending to API
-4. **Error Message Sanitization**: Error messages don't expose sensitive information
+- 200: Success
+- 400: Invalid payload
+- 401: Invalid API key
+- 500: Server error
 
-## Resources
+> **Important:** The QHealth application expects these exact response formats. Non-JSON responses will be treated as network errors.
 
-- [GALE API Documentation](https://gale-api-docs.example.com) - Official GALE API documentation
-- [Fetch API MDN](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) - Web Fetch API reference
-- [React Native InAppBrowser](https://github.com/proyecto26/react-native-inappbrowser) - InAppBrowser library documentation
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/) - TypeScript language reference
+## Step 5: Security Considerations
+
+- **API Key Validation:** Always validate the x-api-key header
+- **HTTPS Required:** Your endpoint must use HTTPS
+- **Input Validation:** Validate all received fields are expected types
+- **Session ID Verification:** Verify scan_source_id matches your provided session ID
+- **Do Not Expose Keys:** Your API key is stored securely on our servers, never in the URL
+
+## Step 6: Testing Checklist
+
+Before going live, verify:
+
+- [ ] API endpoint is accessible from the internet
+- [ ] API key authentication is working
+- [ ] Endpoint returns valid JSON responses
+- [ ] All required fields are properly stored/processed
+- [ ] InAppBrowser opens the URL successfully
+- [ ] Scan completes and data is received at your endpoint
+- [ ] Error responses are handled gracefully
+- [ ] Session IDs are correctly tracked
+
+### Quick Test
+
+- Open the URL in your React Native app
+- Complete a scan
+- Verify data arrives at your endpoint
+- Check response is processed correctly
+
+## Troubleshooting
+
+**Issue: API Requests Not Reaching Your Endpoint**
+
+- _Cause:_ Network restrictions or incorrect URL.
+- _Solution:_
+  - Verify your endpoint is publicly accessible
+  - Check firewall/Azure security rules allow traffic
+  - Confirm URL format matches our specification
+
+**Issue: 401 Unauthorized Errors**
+
+- _Cause:_ API key mismatch.
+- _Solution:_
+  - Confirm the API key we have on file is correct
+  - Check that your endpoint validates the x-api-key header correctly
+  - Ensure no extra spaces or characters in the key
+
+**Issue: Invalid Payload Format**
+
+- _Cause:_ Your endpoint expects different field names or types.
+- _Solution:_
+  - Compare your expected format with the payload structure above
+  - Note that all risk values are percentage strings, not numbers
+  - Accept null values for fields that weren't measured
+
+**Issue: Scan Completes But No Data Received**
+
+- _Cause:_ Network error or endpoint not responding.
+- _Solution:_
+  - Check your server logs for incoming requests
+  - Verify your endpoint returns a valid JSON response quickly (< 30s)
+  - Ensure your API endpoint URL doesn't have typos
+
+**Issue: InAppBrowser Not Opening**
+
+- _Cause:_ Library not properly linked or permissions missing.
+- _Solution:_
+  - Run `react-native link react-native-inappbrowser-reborn`
+  - For iOS: run `pod install` in the ios directory
+  - Check AndroidManifest.xml has internet permissions
+  - Verify the URL is properly encoded
+
+## Support
+
+For technical issues:
+
+- **Endpoint Issues:** Check your server logs and API response format
+- **URL Configuration:** Contact us to verify your configuration
+- **InAppBrowser Problems:** Refer to React Native InAppBrowser documentation
+
+### What We Need for Support:
+
+- Your sessionId
+- Timestamp of the scan
+- Error messages (if any)
+- Screenshots of network logs (if applicable)
 
 ## Summary
 
-This integration guide provides complete documentation on how the QHealth web application sends measurement data to the GALE External API. The integration:
+**Your Implementation is Minimal:**
 
-- Transforms internal data structures to GALE API format
-- Validates all data before transmission
-- Handles errors gracefully without blocking user experience
-- Works seamlessly in both web browser and inappbrowser (React Native) environments
-- Provides comprehensive error handling and debugging capabilities
+- Receive the pre-configured URL from us
+- Open the URL in InAppBrowser
+- Handle the POST request at your endpoint
+- Return JSON responses
 
-For questions or issues, refer to the troubleshooting section or consult the GALE API documentation.
+**We Handle Everything Else:**
 
+- Camera scanning and measurement
+- Secure storage of your API credentials
+- Data transformation and formatting
+- API authentication
+- Error handling during scanning
+- Cross-platform web view compatibility
+
+This integration requires no custom native code and works entirely through standard web APIs and HTTP requests.

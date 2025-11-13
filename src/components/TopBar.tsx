@@ -1,15 +1,16 @@
 import React, { useCallback } from "react"
 
 import { useTimer } from "../hooks"
-import { cn } from "../lib/utils"
 import Logo from "./Logo"
+import Refresh from "../assets/refresh.svg"
 
 interface TopBarProps {
 	isMeasuring?: boolean
 	durationSeconds?: number
+	onRefresh?: () => void
 }
 
-const TopBar: React.FC<TopBarProps> = ({ isMeasuring = false, durationSeconds = 60 }) => {
+const TopBar: React.FC<TopBarProps> = ({ isMeasuring = false, durationSeconds = 60, onRefresh }) => {
 	const seconds = useTimer(isMeasuring, durationSeconds)
 	const formatMinutes = useCallback((seconds: number) => ("0" + Math.floor(seconds / 60)).slice(-2), [])
 	const formatSeconds = useCallback((seconds: number) => ("0" + (seconds % 60)).slice(-2), [])
@@ -19,11 +20,26 @@ const TopBar: React.FC<TopBarProps> = ({ isMeasuring = false, durationSeconds = 
 			<div className="flex items-center gap-2">
 				<Logo />
 			</div>
-			<div className="mr-[10px] flex items-center">
-				{isMeasuring && (
+			{/* Right side section */}
+			<div className="flex items-center justify-end">
+				{isMeasuring ? (
 					<div className="text-base text-white font-medium md:text-lg">
 						Duration: {formatMinutes(seconds)}:{formatSeconds(seconds)}
 					</div>
+				) : (
+					onRefresh && (
+						<button
+							onClick={onRefresh}
+						
+							aria-label="Refresh session"
+						>
+							<img
+								src={Refresh}
+								alt="Refresh"
+								className="h-[60px] w-[60px] object-contain cursor-pointer"
+							/>
+						</button>
+					)
 				)}
 			</div>
 		</div>

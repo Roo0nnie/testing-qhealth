@@ -24,7 +24,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ sessionId, mobileUrl }) =
 		return "https://testing-qhealth-lcwz2m2vf-ro0nnies-projects.vercel.app"
 	}, [mobileUrl])
 
-	const qrCodeUrl = `${baseUrl}?session=${sessionId}`
+	const qrCodeUrl = `${baseUrl}?sessionId=${sessionId}`
 
 	return (
 		<div className="flex flex-col items-center justify-center gap-5 p-10">
@@ -41,7 +41,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ sessionId, mobileUrl }) =
 				<QRCodeSVG value={qrCodeUrl} size={256} level="M" />
 			</div>
 			<div className="text-xs text-muted-foreground font-mono mt-3 break-all transition-colors duration-300">
-				Session: {sessionId}
+				Session ID: {sessionId}
 			</div>
 		</div>
 	)

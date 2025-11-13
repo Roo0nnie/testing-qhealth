@@ -12,7 +12,7 @@ import { Toaster } from "./ui/sonner"
 
 const App = () => {
 	const { isDesktop } = useDeviceDetection()
-	const session = useSession(isDesktop)
+	const { session, refreshSession } = useSession(isDesktop)
 	const { cameras, error: cameraError, isLoading: isCameraLoading } = useCameras()
 	const [cameraId, setCameraId] = useState<string>()
 	const [isLicenseValid, setIsLicenseValid] = useState(false)
@@ -172,6 +172,7 @@ const App = () => {
 				cameraId={cameraId}
 				onLicenseStatus={updateLicenseStatus}
 				sessionId={session?.sessionId}
+				onRefreshSession={refreshSession}
 			/>
 			<Toaster />
 		</div>
