@@ -14,7 +14,7 @@ export const storeResults = async (
 			vitalSigns,
 			timestamp: Date.now(),
 		}
-		localStorage.setItem(`qhealth-session-${sessionId}`, JSON.stringify(data))
+		localStorage.setItem(`qhealth-sessionId-${sessionId}`, JSON.stringify(data))
 		console.log("Results stored in localStorage:", sessionId)
 		return { success: true }
 	} catch (error) {
@@ -34,7 +34,7 @@ export const getResults = async (
 	sessionId: string
 ): Promise<{ success: boolean; data?: MeasurementResults; error?: string }> => {
 	try {
-		const stored = localStorage.getItem(`qhealth-session-${sessionId}`)
+		const stored = localStorage.getItem(`qhealth-sessionId-${sessionId}`)
 		
 		if (!stored) {
 			return {
@@ -48,7 +48,7 @@ export const getResults = async (
 		// Check if session expired (older than 1 hour)
 		const oneHourAgo = Date.now() - 60 * 60 * 1000
 		if (data.timestamp < oneHourAgo) {
-			localStorage.removeItem(`qhealth-session-${sessionId}`)
+			localStorage.removeItem(`qhealth-sessionId-${sessionId}`)
 			return {
 				success: false,
 				error: "Session expired",

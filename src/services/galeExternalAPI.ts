@@ -34,14 +34,10 @@ function getGaleAPIConfig(): GaleAPIConfig | null {
 
 	// @ts-ignore - process.env variables are replaced by webpack DefinePlugin or available via dotenv
 	const baseURL = process.env.GALE_API_BASE_URL
-	// @ts-ignore
 	const apiToken = process.env.GALE_API_KEY
-	// @ts-ignore
 	const systemName = process.env.GALE_SCAN_SOURCE_SYSTEM_NAME || "QHealth System"
-	// @ts-ignore
 	const publisher = process.env.GALE_SCAN_SOURCE_PUBLISHER || "QHealth"
-	// @ts-ignore
-	const enabled = process.env.GALE_API_ENABLED !== "false" // Default to true if not set
+	const enabled = process.env.GALE_API_ENABLED !== "false"
 
 	if (!baseURL || !apiToken) {
 		// console.warn("⚠️ GALE API configuration missing. GALE API calls will be disabled.", {
@@ -109,6 +105,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	const scanResult: Record<string, any> = {
 		// Basic Vital Signs
 		pulse_rate: null,
+		heart_rate: null,
 		respiration_rate: null,
 		spo2: null,
 		blood_pressure_systolic: null,
@@ -256,6 +253,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	}
 
 	scanResult.pulse_rate = getNumericValue(vitalSigns.pulseRate, "pulse_rate")
+	scanResult.heart_rate = getNumericValue(vitalSigns.pulseRate, "heart_rate")
 	scanResult.respiration_rate = getNumericValue(vitalSigns.respirationRate, "respiration_rate")
 	scanResult.spo2 = getNumericValue(vitalSigns.spo2, "spo2")
 
@@ -439,13 +437,13 @@ export async function sendResultsToGaleAPI(
 			scan_result: scanResult,
 		}
 
-		// console.log("📦 Prepared GALE API payload:", {
-		// 	scan_source_id: payload.scan_source_id,
-		// 	scan_source_system_name: payload.scan_source_system_name,
-		// 	scan_source_publisher: payload.scan_source_publisher,
-		// 	scan_result_fields: Object.keys(payload.scan_result).length,
-		// 	scan_result: payload.scan_result
-		// })
+		console.log("📦 Prepared GALE API payload:", {
+			scan_source_id: payload.scan_source_id,
+			scan_source_system_name: payload.scan_source_system_name,
+			scan_source_publisher: payload.scan_source_publisher,
+			scan_result_fields: Object.keys(payload.scan_result).length,
+			scan_result: payload.scan_result
+		})
 
 		// Validate payload structure
 		if (!payload.scan_source_id || !payload.scan_source_system_name || !payload.scan_source_publisher) {

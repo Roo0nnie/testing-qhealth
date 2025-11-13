@@ -85,6 +85,7 @@ const formatValue = (value: any, type: string): string => {
 const vitalSignsConfig = [
 	// Basic Vital Signs
 	{ key: "pulseRate", title: "PR", type: "number" },
+	{ key: "pulseRate", title: "HR", type: "number" },
 	{ key: "respirationRate", title: "RR", type: "number" },
 	{ key: "spo2", title: "SpO₂", type: "number" },
 	{ key: "bloodPressure", title: "BP", type: "bloodPressure" },

@@ -35,6 +35,7 @@
 		cameraId: string
 		onLicenseStatus: (valid: boolean) => void
 		sessionId?: string
+		onRefreshSession?: () => void
 	}
 
 	const BiosenseSignalMonitor = ({
@@ -42,6 +43,7 @@
 		cameraId,
 		onLicenseStatus,
 		sessionId,
+		onRefreshSession,
 	}: BiosenseSignalMonitorProps) => {
 		if (!showMonitor) {
 			return null
@@ -75,6 +77,12 @@
 	useEffect(() => {
 		vitalSignsRef.current = vitalSigns
 	}, [vitalSigns])
+
+	// Reset hasSentResults when sessionId changes
+	useEffect(() => {
+		setHasSentResults(false)
+		setIsResultsModalOpen(false)
+	}, [sessionId])
 
 	const isMeasuring = useCallback(() => sessionState === SessionState.MEASURING, [sessionState])
 	const timerSeconds = useTimer(isMeasuring(), processingTime)
@@ -234,14 +242,22 @@
 
 		const handleCloseModal = useCallback(() => {
 			setIsResultsModalOpen(false)
-		}, [])
+			// Refresh session after modal is closed
+			if (onRefreshSession) {
+				onRefreshSession()
+			}
+		}, [onRefreshSession])
 
 		const mobile = useMemo(() => isMobile(), [])
 		const desktop = useMemo(() => !isTablet() && !isMobile(), [])
 
 		return (
 			<>
-				<TopBar isMeasuring={isMeasuring()} durationSeconds={processingTime} />
+				<TopBar 
+					isMeasuring={isMeasuring()} 
+					durationSeconds={processingTime} 
+					onRefresh={onRefreshSession}
+				/>
 
 				<div className="flex flex-col w-full justify-start items-center flex-1 overflow-hidden pt-[60px] md:w-fit md:justify-center md:pt-0 md:h-[calc(100vh-60px)]">
 					<div
