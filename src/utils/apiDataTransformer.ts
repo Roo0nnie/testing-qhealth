@@ -8,6 +8,7 @@ import {
 	convertASCVDRiskToCategory,
 	convertASCVDRiskToLevel,
 	convertSNSIndexToZone,
+	convertPNSIndexToZone,
 	convertStressLevelToString,
 	convertWellnessLevelToString,
 	convertZoneToString,
@@ -30,9 +31,9 @@ export interface ScanResult {
 	normalized_stress_index: number | null
 	wellness_index: number | null
 	wellness_level: string | null // "Low", "Medium", "High"
-	sns_index: number | null
+	sns_index: string | null // "low", "normal", "high"
 	sns_zone: string | null // "low", "normal", "high"
-	pns_index: number | null
+	pns_index: string | null // "low", "normal", "high"
 	pns_zone: string | null // "low", "normal", "high"
 	prq: number | null
 	hemoglobin: number | null
@@ -86,11 +87,47 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 	const stressLevelString = convertStressLevelToString(vitalSigns.stressLevel?.value || null)
 
 	// Convert zones
-	const snsZoneString = vitalSigns.snsZone?.value
-		? convertSNSIndexToZone(vitalSigns.snsIndex?.value as number | null) ||
-		  convertZoneToString(vitalSigns.snsZone.value)
-		: null
-	const pnsZoneString = convertZoneToString(vitalSigns.pnsZone?.value || null)
+	let snsZoneString: string | null = null
+	if (vitalSigns.snsZone?.value !== null && vitalSigns.snsZone?.value !== undefined) {
+		const snsZoneValue = vitalSigns.snsZone.value
+		if (typeof snsZoneValue === "number") {
+			// Convert numeric zone value directly using threshold logic
+			snsZoneString = convertSNSIndexToZone(snsZoneValue)
+			// Fallback to using snsIndex if available
+			if (!snsZoneString && vitalSigns.snsIndex?.value) {
+				snsZoneString = convertSNSIndexToZone(vitalSigns.snsIndex.value as number)
+			}
+		} else if (typeof snsZoneValue === "string") {
+			snsZoneString = convertZoneToString(snsZoneValue)
+		} else {
+			// Fallback to converting from index
+			snsZoneString = convertSNSIndexToZone(vitalSigns.snsIndex?.value as number | null)
+		}
+	} else {
+		// If zone is not available, try to convert from index
+		snsZoneString = convertSNSIndexToZone(vitalSigns.snsIndex?.value as number | null)
+	}
+
+	let pnsZoneString: string | null = null
+	if (vitalSigns.pnsZone?.value !== null && vitalSigns.pnsZone?.value !== undefined) {
+		const pnsZoneValue = vitalSigns.pnsZone.value
+		if (typeof pnsZoneValue === "number") {
+			// Convert numeric zone value directly using threshold logic
+			pnsZoneString = convertPNSIndexToZone(pnsZoneValue)
+			// Fallback to using pnsIndex if available
+			if (!pnsZoneString && vitalSigns.pnsIndex?.value) {
+				pnsZoneString = convertPNSIndexToZone(vitalSigns.pnsIndex.value as number)
+			}
+		} else if (typeof pnsZoneValue === "string") {
+			pnsZoneString = convertZoneToString(pnsZoneValue)
+		} else {
+			// Fallback to converting from index
+			pnsZoneString = convertPNSIndexToZone(vitalSigns.pnsIndex?.value as number | null)
+		}
+	} else {
+		// If zone is not available, try to convert from index
+		pnsZoneString = convertPNSIndexToZone(vitalSigns.pnsIndex?.value as number | null)
+	}
 
 	// Convert ASCVD risk level
 	const ascvdRiskLevel = vitalSigns.ascvdRisk?.value
@@ -134,9 +171,9 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 		normalized_stress_index: vitalSigns.normalizedStressIndex?.value || null,
 		wellness_index: vitalSigns.wellnessIndex?.value || null,
 		wellness_level: wellnessLevelString,
-		sns_index: vitalSigns.snsIndex?.value as number | null,
+		sns_index: convertSNSIndexToZone(vitalSigns.snsIndex?.value as number | null),
 		sns_zone: snsZoneString,
-		pns_index: vitalSigns.pnsIndex?.value || null,
+		pns_index: convertPNSIndexToZone(vitalSigns.pnsIndex?.value as number | null),
 		pns_zone: pnsZoneString,
 		prq: vitalSigns.prq?.value || null,
 		hemoglobin: vitalSigns.hemoglobin?.value || null,

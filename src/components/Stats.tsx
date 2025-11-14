@@ -14,9 +14,12 @@ import {
 	convertWellnessLevelToString,
 	convertStressLevelToString,
 	convertSNSIndexToZone,
+	convertPNSIndexToZone,
 	convertZoneToString,
+	convertZoneToRiskLevel,
 	convertASCVDRiskToLevel,
 	type RiskLevel,
+	type ZoneString,
 } from "../utils/riskLevelCalculator"
 
 const Wrapper = ({
@@ -89,10 +92,28 @@ const formatValue = (value: any, type: string, vitalSignKey: string, vitalSigns:
 			if (typeof value === "string") {
 				return value.toLowerCase()
 			}
-			// Convert SNS index to zone if needed
-			if (vitalSignKey === "snsZone" && vitalSigns.snsIndex?.value) {
-				const zone = convertSNSIndexToZone(vitalSigns.snsIndex.value as number)
-				return zone || String(value)
+			// Convert numeric zone values to zone strings using threshold logic
+			if (typeof value === "number") {
+				// Convert SNS zone using SNS index if available
+				if (vitalSignKey === "snsZone") {
+					if (vitalSigns.snsIndex?.value) {
+						const zone = convertSNSIndexToZone(vitalSigns.snsIndex.value as number)
+						if (zone) return zone
+					}
+					// If no index available, convert the numeric zone value directly
+					const zone = convertSNSIndexToZone(value)
+					return zone || String(value)
+				}
+				// Convert PNS zone using PNS index if available
+				if (vitalSignKey === "pnsZone") {
+					if (vitalSigns.pnsIndex?.value) {
+						const zone = convertPNSIndexToZone(vitalSigns.pnsIndex.value as number)
+						if (zone) return zone
+					}
+					// If no index available, convert the numeric zone value directly
+					const zone = convertPNSIndexToZone(value)
+					return zone || String(value)
+				}
 			}
 			return String(value)
 		case "wellnessLevel":
@@ -109,6 +130,20 @@ const formatValue = (value: any, type: string, vitalSignKey: string, vitalSigns:
 			}
 			const stressLevel = convertStressLevelToString(value)
 			return stressLevel || String(value)
+		case "snsIndex":
+			// Convert SNS index number to zone string
+			if (typeof value === "number") {
+				const zone = convertSNSIndexToZone(value)
+				return zone || String(value)
+			}
+			return String(value)
+		case "pnsIndex":
+			// Convert PNS index number to zone string
+			if (typeof value === "number") {
+				const zone = convertPNSIndexToZone(value)
+				return zone || String(value)
+			}
+			return String(value)
 		case "number":
 		default:
 			if (typeof value === "number") {
@@ -177,6 +212,50 @@ function getRiskLevel(key: string, vitalSigns: VitalSigns): RiskLevel | null {
 				}
 			}
 			return null
+		case "snsIndex":
+			// Convert SNS index to zone, then to risk level
+			const snsIndexValue = vitalSigns.snsIndex?.value as number | null
+			if (snsIndexValue !== null && snsIndexValue !== undefined) {
+				const zone = convertSNSIndexToZone(snsIndexValue)
+				return convertZoneToRiskLevel(zone)
+			}
+			return null
+		case "snsZone":
+			// Get zone string from snsZone value or convert from snsIndex
+			const snsZoneValue = vitalSigns.snsZone?.value
+			let snsZone: ZoneString | null = null
+			if (typeof snsZoneValue === "string") {
+				snsZone = convertZoneToString(snsZoneValue)
+			} else if (typeof snsZoneValue === "number") {
+				// Convert numeric zone value using threshold logic
+				snsZone = convertSNSIndexToZone(snsZoneValue)
+			} else if (vitalSigns.snsIndex?.value) {
+				// Fallback to converting from index
+				snsZone = convertSNSIndexToZone(vitalSigns.snsIndex.value as number)
+			}
+			return convertZoneToRiskLevel(snsZone)
+		case "pnsIndex":
+			// Convert PNS index to zone, then to risk level
+			const pnsIndexValue = vitalSigns.pnsIndex?.value as number | null
+			if (pnsIndexValue !== null && pnsIndexValue !== undefined) {
+				const zone = convertPNSIndexToZone(pnsIndexValue)
+				return convertZoneToRiskLevel(zone)
+			}
+			return null
+		case "pnsZone":
+			// Get zone string from pnsZone value or convert from pnsIndex
+			const pnsZoneValue = vitalSigns.pnsZone?.value
+			let pnsZone: ZoneString | null = null
+			if (typeof pnsZoneValue === "string") {
+				pnsZone = convertZoneToString(pnsZoneValue)
+			} else if (typeof pnsZoneValue === "number") {
+				// Convert numeric zone value using threshold logic
+				pnsZone = convertPNSIndexToZone(pnsZoneValue)
+			} else if (vitalSigns.pnsIndex?.value) {
+				// Fallback to converting from index
+				pnsZone = convertPNSIndexToZone(vitalSigns.pnsIndex.value as number)
+			}
+			return convertZoneToRiskLevel(pnsZone)
 		default:
 			return null
 	}
@@ -254,14 +333,29 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 			if (key === "rri") valueType = "rriArray"
 			if (key === "wellnessLevel") valueType = "wellnessLevel"
 			if (key === "stressLevel") valueType = "stressLevel"
+			if (key === "snsIndex") valueType = "snsIndex"
+			if (key === "pnsIndex") valueType = "pnsIndex"
 			if (["snsZone", "pnsZone"].includes(key)) valueType = "zone"
 			if (key.includes("Risk")) valueType = "risk"
 			if (key === "ascvdRisk") valueType = "percentage"
 			if (key === "ascvdRiskLevel") valueType = "zone"
 
-			const displayValue = vitalSign?.isEnabled
-				? formatValue(vitalSign.value, valueType, key, vitalSigns)
-				: "N/A"
+			// Special handling for Oxygen Saturation: show "--" instead of "N/A" when empty/null or disabled
+			const isOxygenSaturation = key === "oxygenSaturation" || key === "spo2"
+			let displayValue: string
+			if (isOxygenSaturation) {
+				// For Oxygen Saturation, show "--" if disabled or if value is null/undefined/empty
+				if (!vitalSign?.isEnabled || vitalSign?.value === null || vitalSign?.value === undefined) {
+					displayValue = "--"
+				} else {
+					displayValue = formatValue(vitalSign.value, valueType, key, vitalSigns)
+				}
+			} else {
+				// For other vital signs, keep existing logic
+				displayValue = vitalSign?.isEnabled
+					? formatValue(vitalSign.value, valueType, key, vitalSigns)
+					: "--"
+			}
 
 			const riskLevel = getRiskLevel(key, vitalSigns)
 
