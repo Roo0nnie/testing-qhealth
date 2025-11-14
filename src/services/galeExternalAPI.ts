@@ -454,13 +454,13 @@ export async function sendResultsToGaleAPI(
 			scan_result: scanResult,
 		}
 
-		console.log("📦 Prepared GALE API payload:", {
-			scan_source_id: payload.scan_source_id,
-			scan_source_system_name: payload.scan_source_system_name,
-			scan_source_publisher: payload.scan_source_publisher,
-			scan_result_fields: Object.keys(payload.scan_result).length,
-			scan_result: payload.scan_result
-		})
+		// console.log("📦 Prepared GALE API payload:", {
+		// 	scan_source_id: payload.scan_source_id,
+		// 	scan_source_system_name: payload.scan_source_system_name,
+		// 	scan_source_publisher: payload.scan_source_publisher,
+		// 	scan_result_fields: Object.keys(payload.scan_result).length,
+		// 	scan_result: payload.scan_result
+		// })
 
 		// Validate payload structure
 		if (!payload.scan_source_id || !payload.scan_source_system_name || !payload.scan_source_publisher) {
@@ -471,12 +471,12 @@ export async function sendResultsToGaleAPI(
 		// Use sessionId as patient_Id in the endpoint
 		const patient_Id = results.sessionId
 		const endpoint = `${config.baseURL}/api/external/${patient_Id}/scan/rppg/save`
-		console.log("🚀 Sending POST request to GALE API...", {
-			endpoint,
-			method: "POST",
-			hasapiToken: !!config.apiToken,
-			apiTokenLength: config.apiToken.length,
-		})
+		// console.log("🚀 Sending POST request to GALE API...", {
+		// 	endpoint,
+		// 	method: "POST",
+		// 	hasapiToken: !!config.apiToken,
+		// 	apiTokenLength: config.apiToken.length,
+		// })
 
 		const response = await fetch(endpoint, {
 			method: "POST",
@@ -487,14 +487,14 @@ export async function sendResultsToGaleAPI(
 			body: JSON.stringify(payload),
 		})
 
-		console.log("📥 Received response from GALE API:", {
-			status: response.status,
-			statusText: response.statusText,
-			ok: response.ok,
-			headers: {
-				contentType: response.headers.get("content-type"),
-			}
-		})
+		// console.log("📥 Received response from GALE API:", {
+		// 	status: response.status,
+		// 	statusText: response.statusText,
+		// 	ok: response.ok,
+		// 	headers: {
+		// 		contentType: response.headers.get("content-type"),
+		// 	}
+		// })
 
 		if (!response.ok) {
 			const errorText = await response.text().catch(() => "Unknown error")
