@@ -12,6 +12,7 @@ import monitor, {
 	VitalSigns,
 	VitalSignsResults,
 	Sex,
+	SmokingStatus,
 } from "@biosensesignal/web-sdk"
 
 import { InfoData, InfoType } from "../types"
@@ -95,7 +96,30 @@ const useMonitor = (
 		if (vitalSignsResults?.results) {
 			console.log('SDK Final Results structure:', Object.keys(vitalSignsResults.results));
 			console.log('SDK Final Results full object:', vitalSignsResults.results);
+			
+			// Enhanced SpO2 debugging - check for any property that might contain SpO2
+			const results = vitalSignsResults.results as any;
+			console.log('🔍 SpO2 Search in Final Results:', {
+				hasSpo2: !!results.spo2,
+				hasOxygenSaturation: !!results.oxygenSaturation,
+				hasSpO2: !!results.spO2,
+				hasO2Sat: !!results.o2Sat,
+				hasOxygenSat: !!results.oxygenSat,
+				allKeys: Object.keys(results),
+				spo2Details: results.spo2 ? {
+					value: results.spo2.value,
+					isEnabled: results.spo2.isEnabled,
+					confidenceLevel: results.spo2.confidenceLevel
+				} : null,
+				oxygenSaturationDetails: results.oxygenSaturation ? {
+					value: results.oxygenSaturation.value,
+					isEnabled: results.oxygenSaturation.isEnabled,
+					confidenceLevel: results.oxygenSaturation.confidenceLevel
+				} : null,
+			});
 		}
+		// Also log the full VitalSignsResults object to see if SpO2 is at a different level
+		console.log('🔍 Full VitalSignsResults object keys:', Object.keys(vitalSignsResults || {}));
 		setVitalSigns(null);
 		updateVitalSigns(vitalSignsResults.results);
 	}, [updateVitalSigns]);
@@ -193,12 +217,15 @@ const useMonitor = (
 
 				sessionState === SessionState.ACTIVE && session?.terminate()
 
-				// Convert demographics to SDK format
-				const subjectDemographic = {
+				// Convert demographics to SDK format with smoking status
+				// Use userInformation instead of subjectDemographic to include smoking status
+				// This is required for ASCVD risk and heart age calculations
+				const userInformation = {
 					sex: demographics.sex === "male" ? Sex.MALE : Sex.FEMALE,
 					age: demographics.age,
 					weight: demographics.weight,
 					height: demographics.height,
+					smokingStatus: demographics.smoking ? SmokingStatus.SMOKER : SmokingStatus.NON_SMOKER,
 				}
 
 				const options: FaceSessionOptions = {
@@ -212,18 +239,21 @@ const useMonitor = (
 					onStateChange,
 					orientation: DeviceOrientation.PORTRAIT,
 					onImageData,
-					subjectDemographic,
+					userInformation,
 					// isAnalyticsEnabled: true,
 					/*******************************************************************************
 					 * For accurate vital signs calculation the user's parameters should be provided.
 					 * The following is an example of how the parameters are passed to the SDK:
 					 *
-					 * subjectDemographic: {sex: Sex.MALE, age: 35, weight: 75, height: 165}
+					 * userInformation: {sex: Sex.MALE, age: 35, weight: 75, height: 165, smokingStatus: SmokingStatus.NON_SMOKER}
 					 *
 					 * When measuring a new user then a new session must be created using the
 					 * new user's parameters
 					 * The parameters are used locally on the device only for the vital sign
 					 * calculation, and deleted when the session is terminated.
+					 * 
+					 * Note: userInformation includes smokingStatus which is required for
+					 * ASCVD risk and heart age calculations.
 					 *******************************************************************************/
 				}
 
@@ -236,7 +266,7 @@ const useMonitor = (
 				console.error("Error creating a session", e)
 			}
 		})()
-	}, [processingTime, isMonitorReady, demographics.age, demographics.height, demographics.weight, demographics.sex])
+	}, [processingTime, isMonitorReady, demographics.age, demographics.height, demographics.weight, demographics.sex, demographics.smoking])
 
 	useEffect(() => {
 		if (startMeasuring) {
@@ -253,16 +283,95 @@ const useMonitor = (
 	const getVitalSign = useCallback((
 		sdkProperty: string,
 		enabledProperty?: string,
-		defaultValue: any = null
+		defaultValue: any = null,
+		allowValueWithoutEnabled: boolean = false
 	) => {
 		const sdkVitalSigns = vitalSigns as any;
+		console.log('sdkVitalSigns getVitalSign', sdkVitalSigns);
 		const vitalSignObj = sdkVitalSigns?.[sdkProperty];
 		const value = vitalSignObj?.value ?? defaultValue;
 		const confidenceLevel = vitalSignObj?.confidenceLevel;
 		const enabledVitalSignsObj = enabledVitalSigns as any;
-		const isEnabled = enabledProperty 
+		let isEnabled = enabledProperty 
 			? enabledVitalSignsObj?.[enabledProperty] ?? false
 			: value !== null && value !== undefined;
+		
+		// Special handling for spo2: if value exists but enabled flag is false/undefined,
+		// still allow the value to be used (fallback for SDK compatibility)
+		if (allowValueWithoutEnabled && value !== null && value !== undefined && !isEnabled) {
+			isEnabled = true;
+		}
+		
+		return { value, isEnabled, confidenceLevel };
+	}, [vitalSigns, enabledVitalSigns]);
+
+	// Helper function to get SpO2 value with fallback to check multiple possible property names
+	const getSpO2Value = useCallback(() => {
+		const sdkVitalSigns = vitalSigns as any;
+console.log('sdkVitalSigns getSpO2Value', sdkVitalSigns);
+
+
+		const enabledVitalSignsObj = enabledVitalSigns as any;
+		
+		// Try multiple possible property names in order of likelihood
+		const possiblePropertyNames = ['spo2', 'oxygenSaturation', 'spO2', 'o2Sat', 'oxygenSat'];
+		let vitalSignObj: any = null;
+		let propertyName: string = 'none';
+		
+		for (const propName of possiblePropertyNames) {
+			const candidate = sdkVitalSigns?.[propName];
+			if (candidate && (candidate.value !== null && candidate.value !== undefined)) {
+				vitalSignObj = candidate;
+				propertyName = propName;
+				break;
+			}
+		}
+		
+		// If no value found, still check if the property exists (even if value is null)
+		if (!vitalSignObj) {
+			for (const propName of possiblePropertyNames) {
+				if (sdkVitalSigns?.[propName]) {
+					vitalSignObj = sdkVitalSigns[propName];
+					propertyName = propName;
+					break;
+				}
+			}
+		}
+		
+		const value = vitalSignObj?.value ?? null;
+		const confidenceLevel = vitalSignObj?.confidenceLevel;
+		
+		let isEnabled = enabledVitalSignsObj?.isEnabledSpo2 ?? false;
+		if (!isEnabled) {
+		
+			isEnabled = enabledVitalSignsObj?.isEnabledOxygenSaturation ?? 
+			             enabledVitalSignsObj?.isEnabledSpO2 ?? false;
+		}
+		
+		if (value !== null && value !== undefined && !isEnabled) {
+			isEnabled = true;
+		}
+		
+		if (vitalSigns) {
+			console.log('🔍 SpO2 Debug Info:', {
+				propertyUsed: propertyName,
+				allKeys: Object.keys(sdkVitalSigns || {}),
+				hasSpo2Property: !!sdkVitalSigns?.spo2,
+				hasOxygenSaturationProperty: !!sdkVitalSigns?.oxygenSaturation,
+				hasSpO2Property: !!sdkVitalSigns?.spO2,
+				spo2Value: sdkVitalSigns?.spo2?.value,
+				oxygenSaturationValue: sdkVitalSigns?.oxygenSaturation?.value,
+				selectedValue: value,
+				confidenceLevel: confidenceLevel,
+				isEnabledSpo2: enabledVitalSignsObj?.isEnabledSpo2,
+				isEnabledOxygenSaturation: enabledVitalSignsObj?.isEnabledOxygenSaturation,
+				resultIsEnabled: isEnabled,
+				allVitalSignKeys: Object.keys(sdkVitalSigns || {}),
+				// Check if SpO2 might be nested or in a different structure
+				spo2Object: sdkVitalSigns?.spo2,
+				oxygenSaturationObject: sdkVitalSigns?.oxygenSaturation,
+			});
+		}
 		
 		return { value, isEnabled, confidenceLevel };
 	}, [vitalSigns, enabledVitalSigns]);
@@ -273,7 +382,7 @@ const useMonitor = (
 			// Basic Vital Signs
 			pulseRate: getVitalSign('pulseRate', 'isEnabledPulseRate'),
 			respirationRate: getVitalSign('respirationRate', 'isEnabledRespirationRate'),
-			spo2: getVitalSign('spo2', 'isEnabledSpo2', null),
+			spo2: getSpO2Value(),
 			bloodPressure: {
 				value: vitalSigns?.bloodPressure?.value ?? null,
 				isEnabled: enabledVitalSigns?.isEnabledBloodPressure ?? false,

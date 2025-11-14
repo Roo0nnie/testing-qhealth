@@ -7,6 +7,7 @@ import {
 	calculateLowHemoglobinRisk,
 	convertWellnessLevelToString,
 	convertSNSIndexToZone,
+	convertASCVDRiskToLevel,
 } from "../utils/riskLevelCalculator"
 
 /**
@@ -151,12 +152,13 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	}
 
 	// Helper to extract value from VitalSign (returns null if not enabled or missing)
-	const getValue = <T>(vitalSign: { value: T | null; isEnabled: boolean } | undefined): T | null => {
+	// Special handling for spo2: allow value even if isEnabled is false
+	const getValue = <T>(vitalSign: { value: T | null; isEnabled: boolean } | undefined, allowWithoutEnabled: boolean = false): T | null => {
 		if (!vitalSign) {
 			return null
 		}
-		// Only return value if vital sign is enabled
-		if (!vitalSign.isEnabled) {
+		// Only return value if vital sign is enabled (unless allowWithoutEnabled is true)
+		if (!vitalSign.isEnabled && !allowWithoutEnabled) {
 			return null
 		}
 		// Check if value is null, undefined, or empty
@@ -168,8 +170,9 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	
 	// Helper to extract numeric value (converts string numbers to actual numbers)
 	// Optionally rounds to specified decimal places
-	const getNumericValue = (vitalSign: { value: any; isEnabled: boolean } | undefined, key?: string, decimals?: number): number | null => {
-		const value = getValue(vitalSign)
+	// Special handling for spo2: allow value even if isEnabled is false
+	const getNumericValue = (vitalSign: { value: any; isEnabled: boolean } | undefined, key?: string, decimals?: number, allowWithoutEnabled: boolean = false): number | null => {
+		const value = getValue(vitalSign, allowWithoutEnabled)
 		if (value === null) {
 			if (key) {
 				// console.log(`  ${key}: null (not enabled or no value)`)
@@ -245,9 +248,30 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 
 	// Risk Indicators (must be first)
 	// ascvd_risk should be a number (not percentage string), ascvd_risk_level should be a string
-	scanResult.ascvd_risk = getNumericValue(vitalSigns.ascvdRisk, "ascvd_risk")
-	const ascvdRiskLevel = getValue(vitalSigns.ascvdRiskLevel)
-	scanResult.ascvd_risk_level = ascvdRiskLevel ? String(ascvdRiskLevel) : null
+	const ascvdRiskValue = getNumericValue(vitalSigns.ascvdRisk, "ascvd_risk")
+	scanResult.ascvd_risk = ascvdRiskValue
+	// Convert ASCVD risk percentage to level string (Low, Medium, High)
+	if (ascvdRiskValue !== null) {
+		const level = convertASCVDRiskToLevel(ascvdRiskValue)
+		scanResult.ascvd_risk_level = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : null
+	} else {
+		// Fallback: try to get from ascvdRiskLevel if ascvdRisk is not available
+		const ascvdRiskLevel = getValue(vitalSigns.ascvdRiskLevel)
+		if (ascvdRiskLevel !== null) {
+			// If it's already a string, capitalize it
+			if (typeof ascvdRiskLevel === 'string') {
+				scanResult.ascvd_risk_level = ascvdRiskLevel.charAt(0).toUpperCase() + ascvdRiskLevel.slice(1).toLowerCase()
+			} else if (typeof ascvdRiskLevel === 'number') {
+				// If it's a number, convert it using the conversion function
+				const level = convertASCVDRiskToLevel(ascvdRiskLevel)
+				scanResult.ascvd_risk_level = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : null
+			} else {
+				scanResult.ascvd_risk_level = String(ascvdRiskLevel)
+			}
+		} else {
+			scanResult.ascvd_risk_level = null
+		}
+	}
 	
 	// Basic Vital Signs
 	// Format blood pressure as "106/69" string
@@ -297,7 +321,10 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	} else {
 		scanResult.sns_zone = null
 	}
-	scanResult.spo2 = getNumericValue(vitalSigns.spo2, "spo2")
+	// Special handling for spo2: allow value even if isEnabled is false
+	// Check both 'spo2' and 'oxygenSaturation' property names (SDK may use either)
+	const spo2VitalSign = vitalSigns.spo2 || (vitalSigns as any).oxygenSaturation
+	scanResult.spo2 = getNumericValue(spo2VitalSign, "spo2", undefined, true)
 	scanResult.stress_index = getNumericValue(vitalSigns.stressIndex, "stress_index")
 	scanResult.stress_level = getNumericValue(vitalSigns.stressLevel, "stress_level")
 	scanResult.wellness_index = getNumericValue(vitalSigns.wellnessIndex, "wellness_index")

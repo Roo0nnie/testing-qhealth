@@ -114,10 +114,13 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 		}
 	}
 
+	// Get SpO2 value with fallback to check both 'spo2' and 'oxygenSaturation' property names
+	const spo2Value = vitalSigns.spo2?.value ?? (vitalSigns as any).oxygenSaturation?.value ?? null
+
 	return {
 		pulse_rate: vitalSigns.pulseRate?.value || null,
 		respiration_rate: vitalSigns.respirationRate?.value || null,
-		spo2: vitalSigns.spo2?.value || null,
+		spo2: spo2Value,
 		"blood Pressure": bloodPressureFormatted,
 		sdnn: vitalSigns.sdnn?.value || null,
 		rmssd: vitalSigns.rmssd?.value || null,

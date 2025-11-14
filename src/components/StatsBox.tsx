@@ -43,7 +43,10 @@ const StatsBox = ({
 
 			{/* Value */}
 			<div className="flex flex-col items-center gap-1">
-				<div className="text-lg font-bold text-[#2d5016]">{value ?? "--"}</div>
+				{/* Only show value text if there's no risk level badge */}
+				{!riskLevel && (
+					<div className="text-lg font-bold text-[#2d5016]">{value ?? "--"}</div>
+				)}
 				{/* Risk Level Badge */}
 				{riskLevel && (
 					<div

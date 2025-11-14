@@ -29,7 +29,7 @@ export const vitalSignsMetadata: VitalSignInfo[] = [
 		color: "blue",
 	},
 	{
-		key: "spo2",
+		key: "oxygenSaturation",
 		fullName: "Oxygen Saturation",
 		unit: "SpO₂ %",
 		icon: Droplet as React.ComponentType<{ className?: string; size?: number }>,
