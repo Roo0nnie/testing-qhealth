@@ -49,12 +49,13 @@
 			return null
 		}
 
-		const video = useRef<HTMLVideoElement>(null!)
-		const [isMeasurementEnabled, setIsMeasurementEnabled] = useState<boolean>(false)
-		const [startMeasuring, setStartMeasuring] = useState<boolean>(false)
-		const [isLoading, setIsLoading] = useState<boolean>(false)
-		const [loadingTimeoutPromise, setLoadingTimeoutPromise] = useState<number>()
-		const isPageVisible = usePageVisibility()
+	const video = useRef<HTMLVideoElement>(null!)
+	const [isMeasurementEnabled, setIsMeasurementEnabled] = useState<boolean>(false)
+	const [startMeasuring, setStartMeasuring] = useState<boolean>(false)
+	const [isLoading, setIsLoading] = useState<boolean>(false)
+	const [loadingTimeoutPromise, setLoadingTimeoutPromise] = useState<number>()
+	const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
+	const isPageVisible = usePageVisibility()
 		const isMediaTablet = useMediaPredicate("(min-width: 1000px)")
 		const processingTime = DEFAULT_MEASUREMENT_DURATION
 		const [licenseKey] = useLicenseKey()
@@ -82,6 +83,7 @@
 	useEffect(() => {
 		setHasSentResults(false)
 		setIsResultsModalOpen(false)
+		setIsRefreshing(false)
 	}, [sessionId])
 
 	const isMeasuring = useCallback(() => sessionState === SessionState.MEASURING, [sessionState])
@@ -137,7 +139,6 @@
 						timestamp: Date.now(),
 					})
 					api.updateSessionStatus(sessionId, SessionStatus.MEASURING).catch(err => {
-						// console.error("Failed to update session status:", err)
 					})
 				}
 			} else if (isMeasuring()) {
@@ -146,25 +147,19 @@
 			}
 		}, [sessionState, setIsLoading, processingTime, isMeasuring, loadingTimeoutPromise, sessionId])
 
-	// Single useEffect: When timer reaches 0, show modal AND send results to API
 	useEffect(() => {
-		// Only trigger when timer reaches 0, we have vital signs, session ID, and haven't sent yet
 		if (timerSeconds === 1 && vitalSigns && sessionId && !hasSentResults) {
 			
 			// Show results modal immediately
 			setIsResultsModalOpen(true)
 			
-			// Wait for vital signs data to be complete before sending to API
 			const waitForDataAndSend = async () => {
-				const MAX_WAIT_TIME = 10000 // 10 seconds max wait
-				const CHECK_INTERVAL = 200 // Check every 200ms
-				const MINIMUM_VALUES = 4 // Minimum required values
+				const MAX_WAIT_TIME = 10000
+				const CHECK_INTERVAL = 200 
+				const MINIMUM_VALUES = 4 
 				const startTime = Date.now()
 
-				// Poll until data is complete or timeout
-				// Use ref to always get the latest vitalSigns value
 				while (true) {
-					// Check current vitalSigns from ref (always latest value)
 					const currentVitalSigns = vitalSignsRef.current
 					if (isVitalSignsDataComplete(currentVitalSigns, MINIMUM_VALUES)) {
 						break
@@ -175,12 +170,9 @@
 						break
 					}
 
-					// Wait before next check
 					await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL))
 				}
 
-				// Data is ready, send to API
-				// Use the latest vitalSigns from ref
 				const finalVitalSigns = vitalSignsRef.current
 				try {
 					const measurementResults: MeasurementResults = {
@@ -240,24 +232,37 @@
 			onLicenseStatus(!(error?.code in HealthMonitorCodes))
 		}, [error, onLicenseStatus])
 
-		const handleCloseModal = useCallback(() => {
-			setIsResultsModalOpen(false)
-			// Refresh session after modal is closed
-			if (onRefreshSession) {
-				onRefreshSession()
-			}
-		}, [onRefreshSession])
+	const handleCloseModal = useCallback(() => {
+		setIsResultsModalOpen(false)
+		// Refresh session after modal is closed
+		if (onRefreshSession) {
+			onRefreshSession()
+		}
+	}, [onRefreshSession])
+
+	const handleRefresh = useCallback(() => {
+		if (onRefreshSession) {
+			setIsRefreshing(true)
+			onRefreshSession()
+			// Reset refreshing state after a short delay to allow UI update
+			// The state will also reset when sessionId changes
+			setTimeout(() => {
+				setIsRefreshing(false)
+			}, 500)
+		}
+	}, [onRefreshSession])
 
 		const mobile = useMemo(() => isMobile(), [])
 		const desktop = useMemo(() => !isTablet() && !isMobile(), [])
 
 		return (
 			<>
-				<TopBar 
-					isMeasuring={isMeasuring()} 
-					durationSeconds={processingTime} 
-					onRefresh={onRefreshSession}
-				/>
+			<TopBar 
+				isMeasuring={isMeasuring()} 
+				durationSeconds={processingTime} 
+				onRefresh={handleRefresh}
+				isRefreshing={isRefreshing}
+			/>
 
 				<div className="flex flex-col w-full justify-start items-center flex-1 overflow-hidden pt-[60px] md:w-fit md:justify-center md:pt-0 md:h-[calc(100vh-60px)]">
 					<div

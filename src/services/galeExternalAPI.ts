@@ -7,6 +7,7 @@ import {
 	calculateLowHemoglobinRisk,
 	convertWellnessLevelToString,
 	convertSNSIndexToZone,
+	convertPNSIndexToZone,
 	convertASCVDRiskToLevel,
 } from "../utils/riskLevelCalculator"
 
@@ -26,21 +27,6 @@ interface GaleAPIConfig {
  * Get GALE API configuration from environment variables
  */
 function getGaleAPIConfig(): GaleAPIConfig | null {
-	// Debug: Check what's available
-	// console.log("🔧 Environment Variables Check:", {
-	// 	// @ts-ignore
-	// 	GALE_API_BASE_URL: process.env.GALE_API_BASE_URL,
-	// 	// @ts-ignore
-	// 	GALE_API_KEY: process.env.GALE_API_KEY ? "***EXISTS***" : "MISSING",
-	// 	// @ts-ignore
-	// 	GALE_SCAN_SOURCE_SYSTEM_NAME: process.env.GALE_SCAN_SOURCE_SYSTEM_NAME,
-	// 	// @ts-ignore
-	// 	GALE_SCAN_SOURCE_PUBLISHER: process.env.GALE_SCAN_SOURCE_PUBLISHER,
-	// 	// @ts-ignore
-	// 	GALE_API_ENABLED: process.env.GALE_API_ENABLED,
-	// 	// @ts-ignore
-	// 	allEnvKeys: Object.keys(process.env || {}).filter(key => key.includes("GALE"))
-	// })
 
 	// @ts-ignore - process.env variables are replaced by webpack DefinePlugin or available via dotenv
 	const baseURL = process.env.GALE_API_BASE_URL
@@ -295,9 +281,25 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	scanResult.mean_arterial_pressure = getNumericValue(vitalSigns.meanArterialPressure, "mean_arterial_pressure")
 	scanResult.mean_rri = getNumericValue(vitalSigns.meanRri, "mean_rri")
 	scanResult.normalized_stress_index = getNumericValue(vitalSigns.normalizedStressIndex, "normalized_stress_index")
-	scanResult.pns_index = getNumericValue(vitalSigns.pnsIndex, "pns_index")
-	const pnsZone = getValue(vitalSigns.pnsZone)
-	scanResult.pns_zone = pnsZone
+	// Convert pns_index from number to zone string ("high", "normal", "low")
+	const pnsIndexValue = getNumericValue(vitalSigns.pnsIndex, "pns_index")
+	scanResult.pns_index = convertPNSIndexToZone(pnsIndexValue)
+	// Convert pns_zone from number to string ("high" instead of 2)
+	const pnsZoneValue = getValue(vitalSigns.pnsZone)
+	if (pnsZoneValue !== null) {
+		if (typeof pnsZoneValue === 'number') {
+			// Convert numeric zone value directly using threshold logic
+			const zone = convertPNSIndexToZone(pnsZoneValue)
+			// Fallback to using pnsIndex if available
+			scanResult.pns_zone = zone || convertPNSIndexToZone(pnsIndexValue) || String(pnsZoneValue)
+		} else if (typeof pnsZoneValue === 'string') {
+			scanResult.pns_zone = pnsZoneValue.toLowerCase()
+		} else {
+			scanResult.pns_zone = String(pnsZoneValue)
+		}
+	} else {
+		scanResult.pns_zone = null
+	}
 	scanResult.prq = getNumericValue(vitalSigns.prq, "prq")
 	scanResult.pulse_pressure = getNumericValue(vitalSigns.pulsePressure, "pulse_pressure")
 	scanResult.respiration_rate = getNumericValue(vitalSigns.respirationRate, "respiration_rate")
@@ -305,14 +307,17 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	scanResult.sd1 = getNumericValue(vitalSigns.sd1, "sd1")
 	scanResult.sd2 = getNumericValue(vitalSigns.sd2, "sd2")
 	scanResult.sdnn = getNumericValue(vitalSigns.sdnn, "sdnn")
-	scanResult.sns_index = getNumericValue(vitalSigns.snsIndex, "sns_index")
+	// Convert sns_index from number to zone string ("high", "normal", "low")
+	const snsIndexValue = getNumericValue(vitalSigns.snsIndex, "sns_index")
+	scanResult.sns_index = convertSNSIndexToZone(snsIndexValue)
 	// Convert sns_zone from number to string ("high" instead of 2)
 	const snsZoneValue = getValue(vitalSigns.snsZone)
 	if (snsZoneValue !== null) {
 		if (typeof snsZoneValue === 'number') {
-			// Use snsIndex to convert to zone string
-			const snsIndexValue = getNumericValue(vitalSigns.snsIndex)
-			scanResult.sns_zone = convertSNSIndexToZone(snsIndexValue) || String(snsZoneValue)
+			// Convert numeric zone value directly using threshold logic
+			const zone = convertSNSIndexToZone(snsZoneValue)
+			// Fallback to using snsIndex if available
+			scanResult.sns_zone = zone || convertSNSIndexToZone(snsIndexValue) || String(snsZoneValue)
 		} else if (typeof snsZoneValue === 'string') {
 			scanResult.sns_zone = snsZoneValue.toLowerCase()
 		} else {

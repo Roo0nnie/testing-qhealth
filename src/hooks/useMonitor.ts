@@ -83,43 +83,12 @@ const useMonitor = (
 	}, [])
 
 	const onVitalSign = useCallback((vitalSign: VitalSigns) => {
-		// Log SDK structure to inspect available properties
-		if (vitalSign && Object.keys(vitalSign).length > 0) {
-			// console.log('SDK VitalSigns object structure:', Object.keys(vitalSign));
-			// console.log('SDK VitalSigns full object:', vitalSign);
-		}
+		
 		updateVitalSigns(vitalSign);
 	}, [updateVitalSigns]);
 
 	const onFinalResults = useCallback((vitalSignsResults: VitalSignsResults) => {
-		// Log final results structure to inspect all available properties
-		if (vitalSignsResults?.results) {
-			// console.log('SDK Final Results structure:', Object.keys(vitalSignsResults.results));
-			// console.log('SDK Final Results full object:', vitalSignsResults.results);
-			
-			// Enhanced SpO2 debugging - check for any property that might contain SpO2
-			const results = vitalSignsResults.results as any;
-			// console.log('🔍 SpO2 Search in Final Results:', {
-			// 	hasSpo2: !!results.spo2,
-			// 	hasOxygenSaturation: !!results.oxygenSaturation,
-			// 	hasSpO2: !!results.spO2,
-			// 	hasO2Sat: !!results.o2Sat,
-			// 	hasOxygenSat: !!results.oxygenSat,
-			// 	allKeys: Object.keys(results),
-			// 	spo2Details: results.spo2 ? {
-			// 		value: results.spo2.value,
-			// 		isEnabled: results.spo2.isEnabled,
-			// 		confidenceLevel: results.spo2.confidenceLevel
-			// 	} : null,
-			// 	oxygenSaturationDetails: results.oxygenSaturation ? {
-			// 		value: results.oxygenSaturation.value,
-			// 		isEnabled: results.oxygenSaturation.isEnabled,
-			// 		confidenceLevel: results.oxygenSaturation.confidenceLevel
-			// 	} : null,
-			// });
-		}
-		// Also log the full VitalSignsResults object to see if SpO2 is at a different level
-		// console.log('🔍 Full VitalSignsResults object keys:', Object.keys(vitalSignsResults || {}));
+		
 		setVitalSigns(null);
 		updateVitalSigns(vitalSignsResults.results);
 	}, [updateVitalSigns]);
@@ -240,21 +209,7 @@ const useMonitor = (
 					orientation: DeviceOrientation.PORTRAIT,
 					onImageData,
 					userInformation,
-					// isAnalyticsEnabled: true,
-					/*******************************************************************************
-					 * For accurate vital signs calculation the user's parameters should be provided.
-					 * The following is an example of how the parameters are passed to the SDK:
-					 *
-					 * userInformation: {sex: Sex.MALE, age: 35, weight: 75, height: 165, smokingStatus: SmokingStatus.NON_SMOKER}
-					 *
-					 * When measuring a new user then a new session must be created using the
-					 * new user's parameters
-					 * The parameters are used locally on the device only for the vital sign
-					 * calculation, and deleted when the session is terminated.
-					 * 
-					 * Note: userInformation includes smokingStatus which is required for
-					 * ASCVD risk and heart age calculations.
-					 *******************************************************************************/
+				
 				}
 
 				const faceSession = await monitor.createFaceSession(options)
@@ -352,26 +307,7 @@ const useMonitor = (
 			isEnabled = true;
 		}
 		
-		if (vitalSigns) {
-			// console.log('🔍 SpO2 Debug Info:', {
-			// 	propertyUsed: propertyName,
-			// 	allKeys: Object.keys(sdkVitalSigns || {}),
-			// 	hasSpo2Property: !!sdkVitalSigns?.spo2,
-			// 	hasOxygenSaturationProperty: !!sdkVitalSigns?.oxygenSaturation,
-			// 	hasSpO2Property: !!sdkVitalSigns?.spO2,
-			// 	spo2Value: sdkVitalSigns?.spo2?.value,
-			// 	oxygenSaturationValue: sdkVitalSigns?.oxygenSaturation?.value,
-			// 	selectedValue: value,
-			// 	confidenceLevel: confidenceLevel,
-			// 	isEnabledSpo2: enabledVitalSignsObj?.isEnabledSpo2,
-			// 	isEnabledOxygenSaturation: enabledVitalSignsObj?.isEnabledOxygenSaturation,
-			// 	resultIsEnabled: isEnabled,
-			// 	allVitalSignKeys: Object.keys(sdkVitalSigns || {}),
-			// 	// Check if SpO2 might be nested or in a different structure
-			// 	spo2Object: sdkVitalSigns?.spo2,
-			// 	oxygenSaturationObject: sdkVitalSigns?.oxygenSaturation,
-			// });
-		}
+	
 		
 		return { value, isEnabled, confidenceLevel };
 	}, [vitalSigns, enabledVitalSigns]);

@@ -3,14 +3,16 @@ import React, { useCallback } from "react"
 import { useTimer } from "../hooks"
 import Logo from "./Logo"
 import Refresh from "../assets/refresh.svg"
+import { Spinner } from "./ui/spinner"
 
 interface TopBarProps {
 	isMeasuring?: boolean
 	durationSeconds?: number
 	onRefresh?: () => void
+	isRefreshing?: boolean
 }
 
-const TopBar: React.FC<TopBarProps> = ({ isMeasuring = false, durationSeconds = 60, onRefresh }) => {
+const TopBar: React.FC<TopBarProps> = ({ isMeasuring = false, durationSeconds = 60, onRefresh, isRefreshing = false }) => {
 	const seconds = useTimer(isMeasuring, durationSeconds)
 	const formatMinutes = useCallback((seconds: number) => ("0" + Math.floor(seconds / 60)).slice(-2), [])
 	const formatSeconds = useCallback((seconds: number) => ("0" + (seconds % 60)).slice(-2), [])
@@ -30,14 +32,19 @@ const TopBar: React.FC<TopBarProps> = ({ isMeasuring = false, durationSeconds = 
 					onRefresh && (
 						<button
 							onClick={onRefresh}
-						
+							disabled={isRefreshing}
 							aria-label="Refresh session"
+							className="h-[60px] w-[60px] flex items-center justify-center"
 						>
-							<img
-								src={Refresh}
-								alt="Refresh"
-								className="h-[60px] w-[60px] object-contain cursor-pointer"
-							/>
+							{isRefreshing ? (
+								<Spinner size={32} className="text-white" />
+							) : (
+								<img
+									src={Refresh}
+									alt="Refresh"
+									className="h-[60px] w-[60px] object-contain cursor-pointer"
+								/>
+							)}
 						</button>
 					)
 				)}

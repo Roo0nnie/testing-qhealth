@@ -1,6 +1,6 @@
 import { BloodPressureValue, VitalSigns } from "../types"
 
-export type RiskLevel = "Low" | "Medium" | "High"
+export type RiskLevel = "Low" | "Medium" | "High" | "Normal"
 export type ASCVDRiskCategory = "Below 1%" | "Between 1%-30%" | "Above 30%"
 export type ASCVDRiskLevel = "low" | "medium" | "high"
 export type StressLevelString = "low" | "normal" | "mild" | "high" | "veryhigh"
@@ -174,20 +174,42 @@ export function convertStressLevelToString(stressLevel: number | string | null):
 
 /**
  * Convert SNS index to zone string
- * high when 1+, normal when 0, low when -1
+ * high when > 1, normal when >= -1 && <= 1, low when < -1
  */
 export function convertSNSIndexToZone(snsIndex: number | null): ZoneString | null {
 	if (snsIndex === null || snsIndex === undefined) {
 		return null
 	}
 
-	if (snsIndex >= 1) {
+	if (snsIndex > 1) {
 		return "high"
 	}
-	if (snsIndex === 0) {
+	if (snsIndex >= -1 && snsIndex <= 1) {
 		return "normal"
 	}
-	if (snsIndex <= -1) {
+	if (snsIndex < -1) {
+		return "low"
+	}
+
+	return null
+}
+
+/**
+ * Convert PNS index to zone string
+ * high when > 1, normal when >= -1 && <= 1, low when < -1
+ */
+export function convertPNSIndexToZone(pnsIndex: number | null): ZoneString | null {
+	if (pnsIndex === null || pnsIndex === undefined) {
+		return null
+	}
+
+	if (pnsIndex > 1) {
+		return "high"
+	}
+	if (pnsIndex >= -1 && pnsIndex <= 1) {
+		return "normal"
+	}
+	if (pnsIndex < -1) {
 		return "low"
 	}
 
@@ -214,6 +236,29 @@ export function convertZoneToString(zone: number | string | null): ZoneString | 
 }
 
 /**
+ * Convert zone string to risk level for color mapping
+ * Maps zone strings to RiskLevel format
+ */
+export function convertZoneToRiskLevel(zone: ZoneString | null): RiskLevel | null {
+	if (zone === null || zone === undefined) {
+		return null
+	}
+
+	switch (zone.toLowerCase()) {
+		case "low":
+			return "Low"
+		case "normal":
+			return "Medium"
+		case "medium":
+			return "Medium"
+		case "high":
+			return "High"
+		default:
+			return null
+	}
+}
+
+/**
  * Get risk level color for display
  */
 export function getRiskLevelColor(riskLevel: RiskLevel | null): string {
@@ -225,6 +270,8 @@ export function getRiskLevelColor(riskLevel: RiskLevel | null): string {
 		case "Low":
 			return "green"
 		case "Medium":
+			return "yellow"
+		case "Normal":
 			return "yellow"
 		case "High":
 			return "red"
