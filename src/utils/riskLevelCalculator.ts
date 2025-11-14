@@ -135,17 +135,18 @@ export function convertASCVDRiskToCategory(ascvdRisk: number | null): ASCVDRiskC
 
 /**
  * Convert ASCVD Risk percentage to level string
- * Low: up to 10%, Medium: 10%-20% (inclusive), High: above 20%
+ * Low: Below 1%, Medium: 1%-30% (inclusive), High: Above 30%
+ * Returns lowercase string for internal use (will be capitalized when sent to API)
  */
 export function convertASCVDRiskToLevel(ascvdRisk: number | null): ASCVDRiskLevel | null {
 	if (ascvdRisk === null || ascvdRisk === undefined) {
 		return null
 	}
 
-	if (ascvdRisk <= 10) {
+	if (ascvdRisk < 1) {
 		return "low"
 	}
-	if (ascvdRisk > 10 && ascvdRisk <= 20) {
+	if (ascvdRisk >= 1 && ascvdRisk <= 30) {
 		return "medium"
 	}
 	return "high"
