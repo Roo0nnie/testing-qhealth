@@ -272,7 +272,6 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 			value: string
 			isEnabled: boolean
 			riskLevel: RiskLevel | null
-			icon: React.ComponentType<{ className?: string; size?: number }>
 		}>> = {}
 
 		// Initialize categories
@@ -366,7 +365,6 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 					value: displayValue,
 					isEnabled: vitalSign?.isEnabled || false,
 					riskLevel,
-					icon: info.icon,
 				})
 			}
 		})
@@ -396,7 +394,7 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 									value={stat.value}
 									unit={stat.unit}
 									riskLevel={stat.riskLevel}
-									icon={stat.icon}
+						
 								/>
 							))}
 						</div>
