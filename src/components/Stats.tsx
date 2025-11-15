@@ -72,7 +72,7 @@ const formatValue = (value: any, type: string, vitalSignKey: string, vitalSigns:
 			return "--"
 		case "rriArray":
 			if (Array.isArray(value) && value.length > 0) {
-				return `${value.length} intervals`
+				return `${value.length}`
 			}
 			return "--"
 		case "percentage":
@@ -332,19 +332,16 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 			if (key === "bloodPressure") valueType = "bloodPressure"
 			if (key === "rri") valueType = "rriArray"
 			if (key === "wellnessLevel") valueType = "wellnessLevel"
-			if (key === "stressLevel") valueType = "stressLevel"
 			if (key === "snsIndex") valueType = "snsIndex"
 			if (key === "pnsIndex") valueType = "pnsIndex"
 			if (["snsZone", "pnsZone"].includes(key)) valueType = "zone"
 			if (key.includes("Risk")) valueType = "risk"
-			if (key === "ascvdRisk") valueType = "percentage"
 			if (key === "ascvdRiskLevel") valueType = "zone"
 
-			// Special handling for Oxygen Saturation: show "--" instead of "N/A" when empty/null or disabled
 			const isOxygenSaturation = key === "oxygenSaturation" || key === "spo2"
 			let displayValue: string
 			if (isOxygenSaturation) {
-				// For Oxygen Saturation, show "--" if disabled or if value is null/undefined/empty
+				
 				if (!vitalSign?.isEnabled || vitalSign?.value === null || vitalSign?.value === undefined) {
 					displayValue = "--"
 				} else {
@@ -352,7 +349,7 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 				}
 			} else {
 				// For other vital signs, keep existing logic
-				displayValue = vitalSign?.isEnabled
+				displayValue = vitalSign?.isEnabled || vitalSign?.value
 					? formatValue(vitalSign.value, valueType, key, vitalSigns)
 					: "--"
 			}
