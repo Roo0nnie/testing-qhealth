@@ -33,7 +33,7 @@ export function calculateHighBloodPressureRisk(
 }
 
 /**
- * Calculate High HbA1c Risk level
+ * Calculate High HbA1c Risk level (goods)
  */
 export function calculateHighHbA1cRisk(hemoglobinA1c: number | null): RiskLevel | null {
 	if (hemoglobinA1c === null || hemoglobinA1c === undefined) {
@@ -43,7 +43,7 @@ export function calculateHighHbA1cRisk(hemoglobinA1c: number | null): RiskLevel 
 	if (hemoglobinA1c >= 6.5) {
 		return "High"
 	}
-	if (hemoglobinA1c >= 6 && hemoglobinA1c < 6.5) {
+	if (hemoglobinA1c >= 6 && hemoglobinA1c < 6.4) {
 		return "Medium"
 	}
 	return "Low"
@@ -103,10 +103,10 @@ export function convertWellnessLevelToString(wellnessLevel: number | null): stri
 		return null
 	}
 
-	if (wellnessLevel >= 1 && wellnessLevel <= 4) {
+	if (wellnessLevel >= 1 && wellnessLevel <= 2) {
 		return "Low"
 	}
-	if (wellnessLevel >= 5 && wellnessLevel <= 7) {
+	if (wellnessLevel >= 4 && wellnessLevel <= 7) {
 		return "Medium"
 	}
 	if (wellnessLevel >= 8 && wellnessLevel <= 10) {
@@ -143,10 +143,10 @@ export function convertASCVDRiskToLevel(ascvdRisk: number | null): ASCVDRiskLeve
 		return null
 	}
 
-	if (ascvdRisk < 1) {
+	if (ascvdRisk < 10) {
 		return "low"
 	}
-	if (ascvdRisk >= 1 && ascvdRisk <= 30) {
+	if (ascvdRisk >= 10 && ascvdRisk <= 20) {
 		return "medium"
 	}
 	return "high"
@@ -248,9 +248,7 @@ export function convertZoneToRiskLevel(zone: ZoneString | null): RiskLevel | nul
 		case "low":
 			return "Low"
 		case "normal":
-			return "Medium"
-		case "medium":
-			return "Medium"
+			return "Normal"
 		case "high":
 			return "High"
 		default:
@@ -260,12 +258,92 @@ export function convertZoneToRiskLevel(zone: ZoneString | null): RiskLevel | nul
 
 /**
  * Get risk level color for display
+ * @param riskLevel - The risk level (Low, Medium, High, Normal)
+ * @param metricKey - Optional metric key to apply metric-specific color schemes
  */
-export function getRiskLevelColor(riskLevel: RiskLevel | null): string {
+export function getRiskLevelColor(riskLevel: RiskLevel | null, metricKey?: string): string {
 	if (!riskLevel) {
 		return "gray"
 	}
 
+	// Apply metric-specific color schemes
+	if (metricKey) {
+		// SNS INDEX, SNS Zone: High=red (bad), Low=green (good), Normal=yellow
+		if (metricKey === "snsIndex" || metricKey === "snsZone") {
+			switch (riskLevel) {
+				case "High":
+					return "red"
+				case "Low":
+					return "green"
+				case "Normal":
+					return "yellow"
+				default:
+					return "gray"
+			}
+		}
+
+		// PNS Index, PNS Zone: High=green (good), Low=red (bad), Normal=yellow
+		if (metricKey === "pnsIndex" || metricKey === "pnsZone") {
+			switch (riskLevel) {
+				case "High":
+					return "green"
+				case "Low":
+					return "red"
+				case "Normal":
+					return "yellow"
+				default:
+					return "gray"
+			}
+		}
+
+		// High Blood Pressure Risk: High=red, Medium=green, Low=yellow
+		if (metricKey === "highBloodPressureRisk") {
+			switch (riskLevel) {
+				case "High":
+					return "red"
+				case "Medium":
+					return "green"
+				case "Low":
+					return "yellow"
+				default:
+					return "gray"
+			}
+		}
+
+		// High Fasting Glucose Risk, Low Hemoglobin Risk: High=red, Low=green
+		if (metricKey === "highFastingGlucoseRisk" || metricKey === "lowHemoglobinRisk") {
+			switch (riskLevel) {
+				case "High":
+					return "red"
+				case "Low":
+					return "green"
+				default:
+					return "gray"
+			}
+		}
+
+		// High HbA1c Risk, High Total Cholesterol Risk, ASCVD Risk, Wellness Score: High=red, Medium=green, Low=yellow
+		if (
+			metricKey === "highHbA1cRisk" ||
+			metricKey === "highHemoglobinA1CRisk" ||
+			metricKey === "highTotalCholesterolRisk" ||
+			metricKey === "ascvdRisk" ||
+			metricKey === "wellnessIndex"
+		) {
+			switch (riskLevel) {
+				case "High":
+					return "red"
+				case "Medium":
+					return "green"
+				case "Low":
+					return "yellow"
+				default:
+					return "gray"
+			}
+		}
+	}
+
+	// Default color scheme for metrics without specific rules
 	switch (riskLevel) {
 		case "Low":
 			return "green"

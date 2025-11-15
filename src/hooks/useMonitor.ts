@@ -88,6 +88,17 @@ const useMonitor = (
 	}, [updateVitalSigns]);
 
 	const onFinalResults = useCallback((vitalSignsResults: VitalSignsResults) => {
+		// Console log all vital signs to debug SpO2/oxygen saturation keys
+		const allVitals = vitalSignsResults.results;
+		console.log('📊 Final results received with', Object.keys(allVitals).length, 'vital signs');
+		
+		// Print all vital sign keys and values for debugging
+		for (const [key, vitalSign] of Object.entries(allVitals)) {
+			const formattedValue = Array.isArray(vitalSign?.value)
+				? `(${vitalSign.value.length} items)`
+				: vitalSign?.value?.toString() ?? 'null';
+			console.log(`  - ${key}: ${formattedValue}`, vitalSign);
+		}
 		
 		setVitalSigns(null);
 		updateVitalSigns(vitalSignsResults.results);
@@ -186,9 +197,6 @@ const useMonitor = (
 
 				sessionState === SessionState.ACTIVE && session?.terminate()
 
-				// Convert demographics to SDK format with smoking status
-				// Use userInformation instead of subjectDemographic to include smoking status
-				// This is required for ASCVD risk and heart age calculations
 				const userInformation = {
 					sex: demographics.sex === "male" ? Sex.MALE : Sex.FEMALE,
 					age: demographics.age,
@@ -263,8 +271,6 @@ const useMonitor = (
 	// Helper function to get SpO2 value with fallback to check multiple possible property names
 	const getSpO2Value = useCallback(() => {
 		const sdkVitalSigns = vitalSigns as any;
-// console.log('sdkVitalSigns getSpO2Value', sdkVitalSigns);
-
 
 		const enabledVitalSignsObj = enabledVitalSigns as any;
 		
@@ -319,6 +325,7 @@ const useMonitor = (
 			pulseRate: getVitalSign('pulseRate', 'isEnabledPulseRate'),
 			respirationRate: getVitalSign('respirationRate', 'isEnabledRespirationRate'),
 			spo2: getSpO2Value(),
+			oxygebSaturation: getVitalSign('oxygenSaturation', 'isEnabledRespirationRate'),
 			bloodPressure: {
 				value: vitalSigns?.bloodPressure?.value ?? null,
 				isEnabled: enabledVitalSigns?.isEnabledBloodPressure ?? false,
@@ -338,7 +345,7 @@ const useMonitor = (
 			stressIndex: getVitalSign('stressIndex', 'isEnabledStressIndex'),
 			normalizedStressIndex: getVitalSign('normalizedStressIndex', 'isEnabledNormalizedStressIndex'),
 			wellnessIndex: getVitalSign('wellnessIndex', 'isEnabledWellnessIndex'),
-			wellnessLevel: getVitalSign('wellnessLevel', 'isEnabledWellnessLevel'),
+			// wellnessLevel: getVitalSign('wellnessLevel', 'isEnabledWellnessLevel'),
 			
 			// Nervous System
 			snsIndex: getVitalSign('snsIndex', 'isEnabledSnsIndex'),
@@ -357,10 +364,10 @@ const useMonitor = (
 			
 			// Risk Indicators
 			ascvdRisk: getVitalSign('ascvdRisk', 'isEnabledAscvdRisk'),
-			ascvdRiskLevel: getVitalSign('ascvdRiskLevel', 'isEnabledAscvdRiskLevel'),
+			// ascvdRiskLevel: getVitalSign('ascvdRiskLevel', 'isEnabledAscvdRiskLevel'),
 			highBloodPressureRisk: getVitalSign('highBloodPressureRisk', 'isEnabledHighBloodPressureRisk'),
 			highFastingGlucoseRisk: getVitalSign('highFastingGlucoseRisk', 'isEnabledHighFastingGlucoseRisk'),
-			highHemoglobinA1CRisk: getVitalSign('highHemoglobinA1CRisk', 'isEnabledHighHemoglobinA1CRisk'), // SDK uses 'highHemoglobinA1CRisk'
+			highHemoglobinA1CRisk: getVitalSign('highHemoglobinA1CRisk', 'isEnabledHighHemoglobinA1CRisk'), 
 			highTotalCholesterolRisk: getVitalSign('highTotalCholesterolRisk', 'isEnabledHighTotalCholesterolRisk'),
 			lowHemoglobinRisk: getVitalSign('lowHemoglobinRisk', 'isEnabledLowHemoglobinRisk'),
 		},

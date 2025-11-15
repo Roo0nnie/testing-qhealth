@@ -9,8 +9,10 @@ interface StatsBoxProps {
 	value: string | number
 	unit?: string
 	riskLevel?: RiskLevel | null
+	metricKey?: string
 	// icon?: React.ComponentType<{ className?: string; size?: number }>
 	className?: string
+	onClick?: () => void
 }
 
 const StatsBox = ({
@@ -19,16 +21,21 @@ const StatsBox = ({
 	value,
 	unit,
 	riskLevel,
+	metricKey,
 	// icon: Icon,
 	className,
+	onClick,
 }: StatsBoxProps) => {
 	const displayName = fullName || title
-	const riskColor = riskLevel ? getRiskLevelColor(riskLevel) : null
+	const riskColor = riskLevel ? getRiskLevelColor(riskLevel, metricKey) : null
 
 	return (
 		<div
+			onClick={onClick}
 			className={cn(
-				"flex flex-col items-center gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md",
+				"flex flex-col items-center gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all",
+				onClick && "cursor-pointer hover:shadow-md hover:border-gray-300 active:scale-[0.98]",
+				!onClick && "hover:shadow-md",
 				className
 			)}
 		>

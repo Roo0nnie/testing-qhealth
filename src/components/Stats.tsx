@@ -1,9 +1,10 @@
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 
 import { VitalSigns } from "../types"
 import { cn } from "../lib/utils"
 import StatsBox from "./StatsBox"
 import CategorySection from "./CategorySection"
+import VitalSignInfoModal from "./VitalSignInfoModal"
 import { getVitalSignInfo, getAllCategories } from "../data/vitalSignInfo"
 import {
 	calculateHighBloodPressureRisk,
@@ -116,8 +117,8 @@ const formatValue = (value: any, type: string, vitalSignKey: string, vitalSigns:
 				}
 			}
 			return String(value)
-		case "wellnessLevel":
-			// Convert wellness level number to string
+		case "wellnessIndex":
+			// Convert wellness index number to string ("Low", "Medium", "High")
 			if (typeof value === "number") {
 				const level = convertWellnessLevelToString(value)
 				return level || String(value)
@@ -196,14 +197,15 @@ function getRiskLevel(key: string, vitalSigns: VitalSigns): RiskLevel | null {
 			return calculateHighTotalCholesterolRisk(
 				vitalSigns.highTotalCholesterolRisk?.value as number | null
 			)
-		case "wellnessLevel":
-			const wellnessValue = vitalSigns.wellnessLevel?.value as number | null
+		case "wellnessIndex":
+			// Convert wellness index to level string
+			const wellnessValue = vitalSigns.wellnessIndex?.value as number | null
 			if (wellnessValue !== null && wellnessValue !== undefined) {
 				const level = convertWellnessLevelToString(wellnessValue)
 				return (level as RiskLevel) || null
 			}
 			return null
-		case "ascvdRiskLevel":
+		case "ascvdRisk":
 			const ascvdRisk = vitalSigns.ascvdRisk?.value as number | null
 			if (ascvdRisk !== null && ascvdRisk !== undefined) {
 				const level = convertASCVDRiskToLevel(ascvdRisk)
@@ -262,6 +264,8 @@ function getRiskLevel(key: string, vitalSigns: VitalSigns): RiskLevel | null {
 }
 
 const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
+	const [selectedVitalSignKey, setSelectedVitalSignKey] = useState<string | null>(null)
+
 	const categorizedStats = useMemo(() => {
 		const categories = getAllCategories()
 		const result: Record<string, Array<{
@@ -297,7 +301,6 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 			"stressIndex",
 			"normalizedStressIndex",
 			"wellnessIndex",
-			"wellnessLevel",
 			"snsIndex",
 			"snsZone",
 			"pnsIndex",
@@ -314,7 +317,7 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 			"highTotalCholesterolRisk",
 			"lowHemoglobinRisk",
 			"ascvdRisk",
-			"ascvdRiskLevel",
+			// "ascvdRiskLevel",
 			"heartAge",
 		]
 
@@ -330,12 +333,12 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 			let valueType = "number"
 			if (key === "bloodPressure") valueType = "bloodPressure"
 			if (key === "rri") valueType = "rriArray"
-			if (key === "wellnessLevel") valueType = "wellnessLevel"
+			if (key === "wellnessIndex") valueType = "wellnessIndex"
 			if (key === "snsIndex") valueType = "snsIndex"
 			if (key === "pnsIndex") valueType = "pnsIndex"
 			if (["snsZone", "pnsZone"].includes(key)) valueType = "zone"
 			if (key.includes("Risk")) valueType = "risk"
-			if (key === "ascvdRiskLevel") valueType = "zone"
+			if (key === "ascvdRisk") valueType = "ascvdRisk"
 
 			const isOxygenSaturation = key === "oxygenSaturation" || key === "spo2"
 			let displayValue: string
@@ -380,28 +383,79 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 		return result
 	}, [vitalSigns])
 
+	// Get the actual value for the selected vital sign
+	const getActualValue = (key: string): string | number | null => {
+		// For highBloodPressureRisk, show the actual Blood Pressure value
+		if (key === "highBloodPressureRisk") {
+			const bp = vitalSigns.bloodPressure?.value
+			if (bp && typeof bp === "object") {
+				const bloodPressure = bp as any
+				if (bloodPressure?.systolic && bloodPressure?.diastolic) {
+					return `${bloodPressure.systolic}/${bloodPressure.diastolic}`
+				}
+			}
+			return null
+		}
+		
+		const vitalSign = vitalSigns[key as keyof VitalSigns]
+		if (!vitalSign) return null
+		
+		// Handle different value types
+		if (vitalSign.value === null || vitalSign.value === undefined) {
+			return null
+		}
+		
+		// For blood pressure, format as "systolic/diastolic"
+		if (key === "bloodPressure" && typeof vitalSign.value === "object") {
+			const bp = vitalSign.value as any
+			if (bp?.systolic && bp?.diastolic) {
+				return `${bp.systolic}/${bp.diastolic}`
+			}
+			return null
+		}
+		
+		// For arrays (like RRI), return the count
+		if (Array.isArray(vitalSign.value)) {
+			return vitalSign.value.length
+		}
+		
+		return vitalSign.value
+	}
+
 	return (
-		<Wrapper isMobile={isMobile}>
-			<div className="w-full space-y-6">
-				{Object.entries(categorizedStats).map(([category, stats]) => (
-					<CategorySection key={category} category={category} count={stats.length}>
-						<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-							{stats.map((stat) => (
-								<StatsBox
-									key={stat.key}
-									title={stat.title}
-									fullName={stat.fullName}
-									value={stat.value}
-									unit={stat.unit}
-									riskLevel={stat.riskLevel}
-						
-								/>
-							))}
-						</div>
-					</CategorySection>
-				))}
-			</div>
-		</Wrapper>
+		<>
+			<Wrapper isMobile={isMobile}>
+				<div className="w-full space-y-6">
+					{Object.entries(categorizedStats).map(([category, stats]) => (
+						<CategorySection key={category} category={category} count={stats.length}>
+							<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+								{stats.map((stat) => (
+									<StatsBox
+										key={stat.key}
+										title={stat.title}
+										fullName={stat.fullName}
+										value={stat.value}
+										unit={stat.unit}
+										riskLevel={stat.riskLevel}
+										metricKey={stat.key}
+										onClick={() => setSelectedVitalSignKey(stat.key)}
+									/>
+								))}
+							</div>
+						</CategorySection>
+					))}
+				</div>
+			</Wrapper>
+			
+			{selectedVitalSignKey && (
+				<VitalSignInfoModal
+					vitalSignKey={selectedVitalSignKey}
+					actualValue={getActualValue(selectedVitalSignKey)}
+					isOpen={!!selectedVitalSignKey}
+					onClose={() => setSelectedVitalSignKey(null)}
+				/>
+			)}
+		</>
 	)
 }
 

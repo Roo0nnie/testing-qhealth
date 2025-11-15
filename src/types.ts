@@ -41,7 +41,7 @@ export interface VitalSigns {
 	// Basic Vital Signs
 	pulseRate: VitalSignWithConfidence<number>;
 	respirationRate: VitalSignWithConfidence<number>;
-	spo2: VitalSign<number>;
+	spo2: VitalSign<number | any>;
 	bloodPressure: VitalSign<BloodPressureValue>;
 	
 	// HRV Metrics
@@ -58,7 +58,7 @@ export interface VitalSigns {
 	stressIndex: VitalSign<number>;
 	normalizedStressIndex: VitalSign<number>;
 	wellnessIndex: VitalSign<number>;
-	wellnessLevel: VitalSign<WellnessLevel>;
+	// wellnessLevel: VitalSign<WellnessLevel>;
 	
 	// Nervous System
 	snsIndex: VitalSign<number>;
@@ -77,7 +77,6 @@ export interface VitalSigns {
 	
 	// Risk Indicators
 	ascvdRisk?: VitalSign<number>;
-	ascvdRiskLevel?: VitalSign<string | number>;
 	highBloodPressureRisk: VitalSign<RiskLevel>;
 	highFastingGlucoseRisk: VitalSign<RiskLevel>;
 	highHemoglobinA1CRisk: VitalSign<RiskLevel>; // Note: SDK uses 'highHemoglobinA1CRisk'
