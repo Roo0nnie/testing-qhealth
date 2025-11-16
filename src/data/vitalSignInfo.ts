@@ -398,7 +398,7 @@ export const vitalSignsMetadata: VitalSignInfo[] = [
 		category: "Risk Assessment",
 		color: "red",
 		description: "Risk assessment for elevated hemoglobin A1c levels indicating diabetes risk.",
-		normalRange: "High Risk (medical attention needed): >= 6.5\Medium Risk (monitor): 6 - 6.4\nLow Risk (optimal): < 6",
+		normalRange: "High Risk (Consultation needed): >= 6.5\nMedium Risk (monitor): 6 - 6.4\nLow Risk (optimal): < 6",
 		clinicalSignificance: "Indicates risk for diabetes and related complications.",
 		interpretation: "High risk suggests need for lifestyle changes and medical monitoring. Early intervention can prevent diabetes.",
 		factors: ["Blood sugar levels", "Diet", "Exercise", "Weight", "Family history", "Age"],

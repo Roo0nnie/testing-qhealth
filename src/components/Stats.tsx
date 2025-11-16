@@ -185,7 +185,7 @@ function getRiskLevel(key: string, vitalSigns: VitalSigns): RiskLevel | null {
 		case "highBloodPressureRisk":
 			return calculateHighBloodPressureRisk(vitalSigns.bloodPressure?.value || null)
 		case "highHbA1cRisk":
-		case "highHemoglobinA1CRisk":
+		// case "highHemoglobinA1CRisk":
 			return calculateHighHbA1cRisk(vitalSigns.hemoglobinA1c?.value || null)
 		case "lowHemoglobinRisk":
 			return calculateLowHemoglobinRisk(vitalSigns.hemoglobin?.value || null)
@@ -245,7 +245,6 @@ function getRiskLevel(key: string, vitalSigns: VitalSigns): RiskLevel | null {
 			}
 			return null
 		case "pnsZone":
-			// Get zone string from pnsZone value or convert from pnsIndex
 			const pnsZoneValue = vitalSigns.pnsZone?.value
 			let pnsZone: ZoneString | null = null
 			if (typeof pnsZoneValue === "string") {
@@ -287,7 +286,7 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 		const allVitalSignKeys = [
 			"pulseRate",
 			"respirationRate",
-			"spo2",
+			// "spo2",
 			'oxygenSaturation',
 			"bloodPressure",
 			"sdnn",

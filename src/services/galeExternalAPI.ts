@@ -125,7 +125,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 		sdnn: null,
 		sns_index: null,
 		sns_zone: null,
-		spo2: null,
+		oxygen_saturation: null,
 		stress_index: null,
 		stress_level: null,
 		wellness_index: null,
@@ -309,10 +309,10 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	} else {
 		scanResult.sns_zone = null
 	}
-	// Special handling for spo2: allow value even if isEnabled is false
-	// Check both 'spo2' and 'oxygenSaturation' property names (SDK may use either)
-	const spo2VitalSign = vitalSigns.spo2 || (vitalSigns as any).oxygenSaturation
-	scanResult.spo2 = getNumericValue(spo2VitalSign, "spo2", undefined, true)
+	// Special handling for oxygenSaturation: allow value even if isEnabled is false
+	// Use only 'oxygenSaturation' property name
+	const oxygenSaturationVitalSign = (vitalSigns as any).oxygenSaturation
+	scanResult.oxygen_saturation = getNumericValue(oxygenSaturationVitalSign, "oxygen_saturation", undefined, true)
 	scanResult.stress_index = getNumericValue(vitalSigns.stressIndex, "stress_index")
 	scanResult.stress_level = getNumericValue(vitalSigns.stressLevel, "stress_level")
 	scanResult.wellness_index = getNumericValue(vitalSigns.wellnessIndex, "wellness_index")
@@ -360,7 +360,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 		{ key: 'sdnn', name: 'sdnn' },
 		{ key: 'snsIndex', name: 'sns_index' },
 		{ key: 'snsZone', name: 'sns_zone' },
-		{ key: 'spo2', name: 'spo2' },
+		{ key: 'oxygenSaturation', name: 'oxygen_saturation' },
 		{ key: 'stressIndex', name: 'stress_index' },
 		{ key: 'stressLevel', name: 'stress_level' },
 		{ key: 'wellnessIndex', name: 'wellness_index' },
