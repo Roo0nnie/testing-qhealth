@@ -35,18 +35,18 @@ export function calculateHighBloodPressureRisk(
 /**
  * Calculate High HbA1c Risk level (goods)
  */
-export function calculateHighHbA1cRisk(hemoglobinA1c: number | null): RiskLevel | null {
-	if (hemoglobinA1c === null || hemoglobinA1c === undefined) {
+export function calculateHighHbA1cRisk(highHemoglobinA1CRisk: number | null): RiskLevel | null {
+	if (highHemoglobinA1CRisk === null || highHemoglobinA1CRisk === undefined) {
 		return null
 	}
 
-	if (hemoglobinA1c >= 6.5) {
-		return "High"
+	if (highHemoglobinA1CRisk >= 6.5) {
+		return "High";
 	}
-	if (hemoglobinA1c >= 6 && hemoglobinA1c < 6.4) {
-		return "Medium"
+	if (highHemoglobinA1CRisk >= 6 && highHemoglobinA1CRisk < 6.5) {
+		return "Medium";
 	}
-	return "Low"
+	return `Low`;
 }
 
 /**

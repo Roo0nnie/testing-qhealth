@@ -161,7 +161,7 @@ function calculateRiskLabel(key: string, value: number | string, vitalSigns: Vit
 		case "highBloodPressureRisk":
 			const bpRisk = calculateHighBloodPressureRisk(vitalSigns.bloodPressure?.value || null)
 			return bpRisk || String(value)
-		case "highHbA1cRisk":
+		// case "highHbA1cRisk":
 		case "highHemoglobinA1CRisk":
 			const hba1cRisk = calculateHighHbA1cRisk(vitalSigns.hemoglobinA1c?.value || null)
 			return hba1cRisk || String(value)
@@ -184,9 +184,9 @@ function getRiskLevel(key: string, vitalSigns: VitalSigns): RiskLevel | null {
 	switch (key) {
 		case "highBloodPressureRisk":
 			return calculateHighBloodPressureRisk(vitalSigns.bloodPressure?.value || null)
-		case "highHbA1cRisk":
-		// case "highHemoglobinA1CRisk":
-			return calculateHighHbA1cRisk(vitalSigns.hemoglobinA1c?.value || null)
+		// case "highHbA1cRisk":
+		case "highHemoglobinA1CRisk":
+			return calculateHighHbA1cRisk(vitalSigns.highHemoglobinA1CRisk?.value as number | null)
 		case "lowHemoglobinRisk":
 			return calculateLowHemoglobinRisk(vitalSigns.hemoglobin?.value || null)
 		case "highFastingGlucoseRisk":
