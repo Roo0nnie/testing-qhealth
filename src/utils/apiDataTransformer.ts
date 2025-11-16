@@ -61,7 +61,7 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 	const highBloodPressureRisk = calculateHighBloodPressureRisk(
 		vitalSigns.bloodPressure?.value || null
 	)
-	const highHbA1cRisk = calculateHighHbA1cRisk(vitalSigns.hemoglobinA1c?.value || null)
+	const highHbA1cRisk = calculateHighHbA1cRisk(vitalSigns.highHemoglobinA1CRisk?.value as number | null)
 	const lowHemoglobinRisk = calculateLowHemoglobinRisk(vitalSigns.hemoglobin?.value || null)
 	const highFastingGlucoseRisk = calculateHighFastingGlucoseRisk(
 		vitalSigns.highFastingGlucoseRisk?.value as number | null
@@ -152,7 +152,7 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 	}
 
 	// Get SpO2 value with fallback to check both 'spo2' and 'oxygenSaturation' property names
-	const spo2Value = vitalSigns.spo2?.value ?? (vitalSigns as any).oxygenSaturation?.value ?? null
+	const spo2Value = vitalSigns.oxygenSaturation?.value ?? (vitalSigns as any).oxygenSaturation?.value ?? null
 
 	return {
 		pulse_rate: vitalSigns.pulseRate?.value || null,
