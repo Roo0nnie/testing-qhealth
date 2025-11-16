@@ -47,8 +47,7 @@ export interface ScanResult {
 	high_total_cholesterol_risk: string | null // "Low", "Medium", "High"
 	low_hemoglobin_risk: string | null // "Low", "High"
 	heart_age: number | null
-	ascvd_risk: number | null
-	ascvd_risk_level: string | null // "low", "medium", "high"
+	ascvd_risk: string | null // "low", "medium", "high"
 	pulse_rate_confidence?: number
 	respiration_rate_confidence?: number
 	prq_confidence?: number
@@ -80,7 +79,8 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 
 	// Convert wellness level
 	const wellnessLevelString = convertWellnessLevelToString(
-		vitalSigns.wellnessLevel?.value as number | null
+		//change from wellnessLevel to 
+		vitalSigns.wellnessIndex?.value as number | null
 	)
 
 	// Convert stress level
@@ -129,10 +129,10 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 		pnsZoneString = convertPNSIndexToZone(vitalSigns.pnsIndex?.value as number | null)
 	}
 
-	// Convert ASCVD risk level
-	const ascvdRiskLevel = vitalSigns.ascvdRisk?.value
+	// Convert ASCVD risk to level string ("low", "medium", "high")
+	const ascvdRiskString = vitalSigns.ascvdRisk?.value
 		? convertASCVDRiskToLevel(vitalSigns.ascvdRisk.value as number)
-		: convertZoneToString(vitalSigns.ascvdRiskLevel?.value as string | null)
+		: null
 
 	// Handle RRI array
 	let rriArray: number[] | null = null
@@ -187,8 +187,7 @@ export function transformVitalSignsToScanResult(vitalSigns: VitalSigns): ScanRes
 		high_total_cholesterol_risk: highTotalCholesterolRisk,
 		low_hemoglobin_risk: lowHemoglobinRisk,
 		heart_age: vitalSigns.heartAge?.value || null,
-		ascvd_risk: vitalSigns.ascvdRisk?.value as number | null,
-		ascvd_risk_level: ascvdRiskLevel,
+		ascvd_risk: ascvdRiskString, // String: "low", "medium", or "high"
 		pulse_rate_confidence: vitalSigns.pulseRate?.confidenceLevel as number | undefined,
 		respiration_rate_confidence: vitalSigns.respirationRate?.confidenceLevel as number | undefined,
 		prq_confidence: vitalSigns.prq?.confidenceLevel as number | undefined,

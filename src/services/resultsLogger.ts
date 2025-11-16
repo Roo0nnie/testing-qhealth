@@ -43,7 +43,6 @@ export function logMeasurementResults(
 			{ key: "stressIndex", label: "Stress Index" },
 			{ key: "normalizedStressIndex", label: "Normalized Stress Index" },
 			{ key: "wellnessIndex", label: "Wellness Index" },
-			{ key: "wellnessLevel", label: "Wellness Level" },
 		],
 		"Nervous System": [
 			{ key: "snsIndex", label: "SNS Index" },
@@ -62,7 +61,6 @@ export function logMeasurementResults(
 		],
 		"Risk Indicators": [
 			{ key: "ascvdRisk", label: "ASCVD Risk" },
-			{ key: "ascvdRiskLevel", label: "ASCVD Risk Level" },
 			{ key: "highBloodPressureRisk", label: "High BP Risk" },
 			{ key: "highFastingGlucoseRisk", label: "High Glucose Risk" },
 			{ key: "highHemoglobinA1CRisk", label: "High HbA1c Risk" },

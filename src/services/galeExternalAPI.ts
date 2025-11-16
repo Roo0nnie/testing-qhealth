@@ -101,7 +101,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	const scanResult: Record<string, any> = {
 		// Risk Indicators (must be first for ASCVD calculation)
 		ascvd_risk: null,
-		ascvd_risk_level: null,
+		// ascvd_risk_level: null,
 		
 		// Basic Vital Signs
 		blood_pressure: null, // Formatted as "106/69"
@@ -125,7 +125,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 		sdnn: null,
 		sns_index: null,
 		sns_zone: null,
-		spo2: null,
+		oxygen_saturation: null,
 		stress_index: null,
 		stress_level: null,
 		wellness_index: null,
@@ -233,30 +233,13 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	}
 
 	// Risk Indicators (must be first)
-	// ascvd_risk should be a number (not percentage string), ascvd_risk_level should be a string
+	// Convert ASCVD risk percentage to level string ("low", "medium", "high")
 	const ascvdRiskValue = getNumericValue(vitalSigns.ascvdRisk, "ascvd_risk")
-	scanResult.ascvd_risk = ascvdRiskValue
-	// Convert ASCVD risk percentage to level string (Low, Medium, High)
 	if (ascvdRiskValue !== null) {
 		const level = convertASCVDRiskToLevel(ascvdRiskValue)
-		scanResult.ascvd_risk_level = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : null
+		scanResult.ascvd_risk = level // Set as string: "low", "medium", or "high"
 	} else {
-		// Fallback: try to get from ascvdRiskLevel if ascvdRisk is not available
-		const ascvdRiskLevel = getValue(vitalSigns.ascvdRiskLevel)
-		if (ascvdRiskLevel !== null) {
-			// If it's already a string, capitalize it
-			if (typeof ascvdRiskLevel === 'string') {
-				scanResult.ascvd_risk_level = ascvdRiskLevel.charAt(0).toUpperCase() + ascvdRiskLevel.slice(1).toLowerCase()
-			} else if (typeof ascvdRiskLevel === 'number') {
-				// If it's a number, convert it using the conversion function
-				const level = convertASCVDRiskToLevel(ascvdRiskLevel)
-				scanResult.ascvd_risk_level = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : null
-			} else {
-				scanResult.ascvd_risk_level = String(ascvdRiskLevel)
-			}
-		} else {
-			scanResult.ascvd_risk_level = null
-		}
+		scanResult.ascvd_risk = null
 	}
 	
 	// Basic Vital Signs
@@ -326,24 +309,18 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	} else {
 		scanResult.sns_zone = null
 	}
-	// Special handling for spo2: allow value even if isEnabled is false
-	// Check both 'spo2' and 'oxygenSaturation' property names (SDK may use either)
-	const spo2VitalSign = vitalSigns.spo2 || (vitalSigns as any).oxygenSaturation
-	scanResult.spo2 = getNumericValue(spo2VitalSign, "spo2", undefined, true)
+	// Special handling for oxygenSaturation: allow value even if isEnabled is false
+	// Use only 'oxygenSaturation' property name
+	const oxygenSaturationVitalSign = (vitalSigns as any).oxygenSaturation
+	scanResult.oxygen_saturation = getNumericValue(oxygenSaturationVitalSign, "oxygen_saturation", undefined, true)
 	scanResult.stress_index = getNumericValue(vitalSigns.stressIndex, "stress_index")
 	scanResult.stress_level = getNumericValue(vitalSigns.stressLevel, "stress_level")
 	scanResult.wellness_index = getNumericValue(vitalSigns.wellnessIndex, "wellness_index")
-	// Convert wellness_level from number to string ("Low" instead of 3)
-	const wellnessLevelValue = getValue(vitalSigns.wellnessLevel)
-	if (wellnessLevelValue !== null) {
-		if (typeof wellnessLevelValue === 'number') {
-			scanResult.wellness_level = convertWellnessLevelToString(wellnessLevelValue) || String(wellnessLevelValue)
-		} else if (typeof wellnessLevelValue === 'string') {
-			// Capitalize first letter to match "Low"/"Medium"/"High" format
-			scanResult.wellness_level = wellnessLevelValue.charAt(0).toUpperCase() + wellnessLevelValue.slice(1).toLowerCase()
-		} else {
-			scanResult.wellness_level = String(wellnessLevelValue)
-		}
+	// Convert wellness_level from wellnessIndex number to string ("Low", "Medium", "High")
+	const wellnessIndexValue = getNumericValue(vitalSigns.wellnessIndex, "wellness_index")
+	if (wellnessIndexValue !== null) {
+		const level = convertWellnessLevelToString(wellnessIndexValue)
+		scanResult.wellness_level = level || null
 	} else {
 		scanResult.wellness_level = null
 	}
@@ -361,7 +338,7 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	// Check each vital sign (only the ones we're sending)
 	const vitalSignChecks = [
 		{ key: 'ascvdRisk', name: 'ascvd_risk' },
-		{ key: 'ascvdRiskLevel', name: 'ascvd_risk_level' },
+		// { key: 'ascvdRiskLevel', name: 'ascvd_risk_level' },
 		{ key: 'bloodPressure', name: 'blood_pressure' },
 		{ key: 'cardiacWorkload', name: 'cardiac_workload' },
 		{ key: 'pulseRate', name: 'heart_rate' },
@@ -383,11 +360,11 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 		{ key: 'sdnn', name: 'sdnn' },
 		{ key: 'snsIndex', name: 'sns_index' },
 		{ key: 'snsZone', name: 'sns_zone' },
-		{ key: 'spo2', name: 'spo2' },
+		{ key: 'oxygenSaturation', name: 'oxygen_saturation' },
 		{ key: 'stressIndex', name: 'stress_index' },
 		{ key: 'stressLevel', name: 'stress_level' },
 		{ key: 'wellnessIndex', name: 'wellness_index' },
-		{ key: 'wellnessLevel', name: 'wellness_level' },
+		// { key: 'wellnessLevel', name: 'wellness_level' },
 		{ key: 'heartAge', name: 'heart_age' },
 		{ key: 'highBloodPressureRisk', name: 'high_blood_pressure_risk' },
 		{ key: 'highFastingGlucoseRisk', name: 'high_fasting_glucose_risk' },
