@@ -436,13 +436,13 @@ export async function sendResultsToGaleAPI(
 			scan_result: scanResult,
 		}
 
-		// console.log("📦 Prepared GALE API payload:", {
-		// 	scan_source_id: payload.scan_source_id,
-		// 	scan_source_system_name: payload.scan_source_system_name,
-		// 	scan_source_publisher: payload.scan_source_publisher,
-		// 	scan_result_fields: Object.keys(payload.scan_result).length,
-		// 	scan_result: payload.scan_result
-		// })
+		console.log("📦 Prepared GALE API payload:", {
+			scan_source_id: payload.scan_source_id,
+			scan_source_system_name: payload.scan_source_system_name,
+			scan_source_publisher: payload.scan_source_publisher,
+			scan_result_fields: Object.keys(payload.scan_result).length,
+			scan_result: payload.scan_result
+		})
 
 		// Validate payload structure
 		if (!payload.scan_source_id || !payload.scan_source_system_name || !payload.scan_source_publisher) {
@@ -453,12 +453,12 @@ export async function sendResultsToGaleAPI(
 		// Use sessionId as patient_Id in the endpoint
 		const patient_Id = results.sessionId
 		const endpoint = `${config.baseURL}/api/external/${patient_Id}/scan/rppg/save`
-		// console.log("🚀 Sending POST request to GALE API...", {
-		// 	endpoint,
-		// 	method: "POST",
-		// 	hasapiToken: !!config.apiToken,
-		// 	apiTokenLength: config.apiToken.length,
-		// })
+		console.log("🚀 Sending POST request to GALE API...", {
+			endpoint,
+			method: "POST",
+			hasapiToken: !!config.apiToken,
+			apiTokenLength: config.apiToken.length,
+		})
 
 		const response = await fetch(endpoint, {
 			method: "POST",
@@ -469,58 +469,58 @@ export async function sendResultsToGaleAPI(
 			body: JSON.stringify(payload),
 		})
 
-		// console.log("📥 Received response from GALE API:", {
-		// 	status: response.status,
-		// 	statusText: response.statusText,
-		// 	ok: response.ok,
-		// 	headers: {
-		// 		contentType: response.headers.get("content-type"),
-		// 	}
-		// })
+		console.log("📥 Received response from GALE API:", {
+			status: response.status,
+			statusText: response.statusText,
+			ok: response.ok,
+			headers: {
+				contentType: response.headers.get("content-type"),
+			}
+		})
 
 		if (!response.ok) {
 			const errorText = await response.text().catch(() => "Unknown error")
-			// console.error("❌ GALE API request failed:", {
-			// 	status: response.status,
-			// 	statusText: response.statusText,
-			// 	error: errorText,
-			// 	sessionId: results.sessionId,
-			// 	endpoint,
-			// })
+			console.error("❌ GALE API request failed:", {
+				status: response.status,
+				statusText: response.statusText,
+				error: errorText,
+				sessionId: results.sessionId,
+				endpoint,
+			})
 			throw new Error(`GALE API request failed: ${response.status} ${response.statusText} - ${errorText}`)
 		}
 
 		const responseData = await response.json().catch(() => ({}))
 		
-		// console.log("📄 GALE API response data:", responseData)
+		console.log("📄 GALE API response data:", responseData)
 		
 		if (responseData.success === false) {
-			// console.error("❌ GALE API returned success: false", {
-			// 	response: responseData,
-			// 	sessionId: results.sessionId,
-			// })
+			console.error("❌ GALE API returned success: false", {
+				response: responseData,
+				sessionId: results.sessionId,
+			})
 			throw new Error("GALE API returned success: false")
 		}
 
 		// Log the complete request format that was successfully sent
-		// console.log("📤 GALE API Request Format (Successfully Sent):", JSON.stringify(payload, null, 2))
+		console.log("📤 GALE API Request Format (Successfully Sent):", JSON.stringify(payload, null, 2))
 
-		// console.log("✅ Successfully sent results to GALE API", {
-		// 	sessionId: results.sessionId,
-		// 	timestamp: results.timestamp,
-		// 	response: responseData,
-		// })
+		console.log("✅ Successfully sent results to GALE API", {
+			sessionId: results.sessionId,
+			timestamp: results.timestamp,
+			response: responseData,
+		})
 
 		return { success: true }
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Unknown error"
-		// console.error("❌ Failed to send results to GALE API:", {
-		// 	error: errorMessage,
-		// 	sessionId: results.sessionId,
-		// 	timestamp: results.timestamp,
-		// 	fullError: error,
-		// 	stack: error instanceof Error ? error.stack : undefined,
-		// })
+		console.error("❌ Failed to send results to GALE API:", {
+			error: errorMessage,
+			sessionId: results.sessionId,
+			timestamp: results.timestamp,
+			fullError: error,
+			stack: error instanceof Error ? error.stack : undefined,
+		})
 
 		// Don't throw - fail silently to not block user experience
 		return { success: false, error: errorMessage }

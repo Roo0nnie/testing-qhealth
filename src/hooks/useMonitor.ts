@@ -88,17 +88,45 @@ const useMonitor = (
 	}, [updateVitalSigns]);
 
 	const onFinalResults = useCallback((vitalSignsResults: VitalSignsResults) => {
-		// Console log all vital signs to debug SpO2/oxygen saturation keys
-		const allVitals = vitalSignsResults.results;
-		console.log('📊 Final results received with', Object.keys(allVitals).length, 'vital signs');
+		// Log the raw input object first (before any type assumptions)
+		console.log('🔍 Raw vitalSignsResults object (runtime structure):', vitalSignsResults);
+		console.log('🔍 Raw vitalSignsResults type:', typeof vitalSignsResults);
+		console.log('🔍 Raw vitalSignsResults keys:', Object.keys(vitalSignsResults));
+		
+		// Get the results object directly from runtime (not from types)
+		const rawResults = (vitalSignsResults as any).results;
+		console.log('🔍 Raw results object:', rawResults);
+		console.log('🔍 Raw results type:', typeof rawResults);
+		
+		// Get all keys dynamically from the actual runtime object
+		// Use both Object.keys() and Object.getOwnPropertyNames() to catch all properties
+		const allKeys = Object.keys(rawResults || {});
+		const allPropertyNames = Object.getOwnPropertyNames(rawResults || {});
+		
+		console.log('📊 Final results received with', allKeys.length, 'vital signs (enumerable keys)');
+		console.log('🔑 All enumerable keys:', allKeys);
+		console.log('🔑 All property names (including non-enumerable):', allPropertyNames);
 		
 		// Print all vital sign keys and values for debugging
-		for (const [key, vitalSign] of Object.entries(allVitals)) {
-			const formattedValue = Array.isArray(vitalSign?.value)
-				? `(${vitalSign.value.length} items)`
-				: vitalSign?.value?.toString() ?? 'null';
-			console.log(`  - ${key}: ${formattedValue}`, vitalSign);
+		console.log('📋 Complete vital signs structure (from runtime):');
+		if (rawResults) {
+			for (const key of allKeys) {
+				const vitalSign = rawResults[key];
+				const formattedValue = Array.isArray(vitalSign?.value)
+					? `(${vitalSign.value.length} items)`
+					: vitalSign?.value?.toString() ?? 'null';
+				console.log(`  - ${key}: ${formattedValue}`, vitalSign);
+			}
 		}
+		
+		// Also log as a clean object for easier inspection
+		console.log('📦 All vital signs as object (runtime):', rawResults);
+		
+		// Log as formatted JSON for easy copy-paste (shows actual runtime structure)
+		console.log('📄 All vital signs as JSON (runtime):', JSON.stringify(rawResults, null, 2));
+		
+		// Log the entire vitalSignsResults structure
+		console.log('📄 Complete vitalSignsResults as JSON:', JSON.stringify(vitalSignsResults, null, 2));
 		
 		setVitalSigns(null);
 		updateVitalSigns(vitalSignsResults.results);
@@ -321,11 +349,11 @@ const useMonitor = (
 	return {
 		sessionState,
 		vitalSigns: {
-			// Basic Vital Signs
-			pulseRate: getVitalSign('pulseRate', 'isEnabledPulseRate'),
-			respirationRate: getVitalSign('respirationRate', 'isEnabledRespirationRate'),
-			spo2: getSpO2Value(),
-			oxygebSaturation: getVitalSign('oxygenSaturation', 'isEnabledRespirationRate'),
+		// Basic Vital Signs
+		pulseRate: getVitalSign('pulseRate', 'isEnabledPulseRate'),
+		respirationRate: getVitalSign('respirationRate', 'isEnabledRespirationRate'),
+		// spo2: getSpO2Value(),
+		oxygenSaturation: getSpO2Value(),
 			bloodPressure: {
 				value: vitalSigns?.bloodPressure?.value ?? null,
 				isEnabled: enabledVitalSigns?.isEnabledBloodPressure ?? false,

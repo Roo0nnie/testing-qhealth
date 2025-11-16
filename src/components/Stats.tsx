@@ -287,7 +287,7 @@ const Stats = ({ vitalSigns, isMobile = false }: IStats) => {
 			"pulseRate",
 			"respirationRate",
 			// "spo2",
-			'oxygenSaturation',
+			// 'oxygenSaturation',
 			"bloodPressure",
 			"sdnn",
 			"rmssd",
