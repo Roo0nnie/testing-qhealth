@@ -16,51 +16,6 @@ interface VitalSignInfoModalProps {
 	onClose: () => void
 }
 
-const colorMap: Record<string, string> = {
-	red: "bg-red-500",
-	blue: "bg-blue-500",
-	cyan: "bg-cyan-500",
-	purple: "bg-purple-500",
-	teal: "bg-teal-500",
-	orange: "bg-orange-500",
-	green: "bg-green-500",
-	amber: "bg-amber-500",
-	lightGreen: "bg-green-400",
-	lightBlue: "bg-blue-400",
-	pink: "bg-pink-500",
-	deepOrange: "bg-orange-600",
-}
-
-const colorTextMap: Record<string, string> = {
-	red: "text-red-600",
-	blue: "text-blue-600",
-	cyan: "text-cyan-600",
-	purple: "text-purple-600",
-	teal: "text-teal-600",
-	orange: "text-orange-600",
-	green: "text-green-600",
-	amber: "text-amber-600",
-	lightGreen: "text-green-500",
-	lightBlue: "text-blue-500",
-	pink: "text-pink-600",
-	deepOrange: "text-orange-700",
-}
-
-const colorBgMap: Record<string, string> = {
-	red: "bg-red-50",
-	blue: "bg-blue-50",
-	cyan: "bg-cyan-50",
-	purple: "bg-purple-50",
-	teal: "bg-teal-50",
-	orange: "bg-orange-50",
-	green: "bg-green-50",
-	amber: "bg-amber-50",
-	lightGreen: "bg-green-50",
-	lightBlue: "bg-blue-50",
-	pink: "bg-pink-50",
-	deepOrange: "bg-orange-50",
-}
-
 const VitalSignInfoModal = ({
 	vitalSignKey,
 	actualValue,
@@ -72,10 +27,6 @@ const VitalSignInfoModal = ({
 	if (!vitalSignInfo) {
 		return null
 	}
-
-	const colorClass = colorMap[vitalSignInfo.color] || "bg-gray-500"
-	const textColorClass = colorTextMap[vitalSignInfo.color] || "text-gray-600"
-	const bgColorClass = colorBgMap[vitalSignInfo.color] || "bg-gray-50"
 
 	const formatValue = (value: string | number | null): string => {
 		if (value === null || value === undefined) return "N/A"
@@ -93,23 +44,17 @@ const VitalSignInfoModal = ({
 						<div
 							className={cn(
 								"w-16 h-16 rounded-full flex items-center justify-center",
-								bgColorClass
+								"bg-primary-main shadow-lg shadow-primary-main/30"
 							)}
 						>
-							<Heart className={cn("w-8 h-8", textColorClass)} />
+							<Heart className="w-8 h-8 text-white" />
 						</div>
 					</div>
-					<DialogTitle className={cn("text-2xl font-bold text-center", textColorClass)}>
+					<DialogTitle className="text-2xl font-bold text-center text-black">
 						{vitalSignInfo.fullName}
 					</DialogTitle>
 					<div className="flex justify-center mt-2">
-						<span
-							className={cn(
-								"px-3 py-1 rounded-full text-sm font-semibold",
-								bgColorClass,
-								textColorClass
-							)}
-						>
+						<span className="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700">
 							{vitalSignInfo.category}
 						</span>
 					</div>
@@ -119,7 +64,7 @@ const VitalSignInfoModal = ({
 				<div className="flex-shrink-0 my-4 p-4 bg-white rounded-lg border-2 border-gray-200">
 					<div className="text-center">
 						<div className="text-sm text-gray-600 mb-1">Your Result</div>
-						<div className={cn("text-3xl font-bold", textColorClass)}>
+						<div className="text-3xl font-bold text-gray-900">
 							{formatValue(actualValue)}
 							{vitalSignInfo.unit && actualValue !== "N/A" && (
 								<span className="text-lg text-gray-500 ml-2">
@@ -136,10 +81,10 @@ const VitalSignInfoModal = ({
 					{vitalSignInfo.description && (
 						<div className="bg-white rounded-lg border border-gray-200 p-4">
 							<div className="flex items-center gap-3 mb-3">
-								<div className={cn("p-2 rounded-lg", bgColorClass)}>
-									<Info className={cn("w-5 h-5", textColorClass)} />
+								<div className="p-2 rounded-lg bg-gray-100">
+									<Info className="w-5 h-5 text-gray-600" />
 								</div>
-								<h3 className={cn("text-lg font-bold", textColorClass)}>
+								<h3 className="text-lg font-bold text-gray-900">
 									Description
 								</h3>
 							</div>
@@ -153,10 +98,10 @@ const VitalSignInfoModal = ({
 					{vitalSignInfo.normalRange && (
 						<div className="bg-white rounded-lg border border-gray-200 p-4">
 							<div className="flex items-center gap-3 mb-3">
-								<div className={cn("p-2 rounded-lg", bgColorClass)}>
-									<Activity className={cn("w-5 h-5", textColorClass)} />
+								<div className="p-2 rounded-lg bg-gray-100">
+									<Activity className="w-5 h-5 text-gray-600" />
 								</div>
-								<h3 className={cn("text-lg font-bold", textColorClass)}>
+								<h3 className="text-lg font-bold text-gray-900">
 									Normal Range
 								</h3>
 							</div>
@@ -170,10 +115,10 @@ const VitalSignInfoModal = ({
 					{vitalSignInfo.clinicalSignificance && (
 						<div className="bg-white rounded-lg border border-gray-200 p-4">
 							<div className="flex items-center gap-3 mb-3">
-								<div className={cn("p-2 rounded-lg", bgColorClass)}>
-									<Heart className={cn("w-5 h-5", textColorClass)} />
+								<div className="p-2 rounded-lg bg-gray-100">
+									<Heart className="w-5 h-5 text-gray-600" />
 								</div>
-								<h3 className={cn("text-lg font-bold", textColorClass)}>
+								<h3 className="text-lg font-bold text-gray-900">
 									Clinical Significance
 								</h3>
 							</div>
@@ -187,10 +132,10 @@ const VitalSignInfoModal = ({
 					{vitalSignInfo.interpretation && (
 						<div className="bg-white rounded-lg border border-gray-200 p-4">
 							<div className="flex items-center gap-3 mb-3">
-								<div className={cn("p-2 rounded-lg", bgColorClass)}>
-									<Lightbulb className={cn("w-5 h-5", textColorClass)} />
+								<div className="p-2 rounded-lg bg-gray-100">
+									<Lightbulb className="w-5 h-5 text-gray-600" />
 								</div>
-								<h3 className={cn("text-lg font-bold", textColorClass)}>
+								<h3 className="text-lg font-bold text-gray-900">
 									Interpretation
 								</h3>
 							</div>
@@ -204,10 +149,10 @@ const VitalSignInfoModal = ({
 					{vitalSignInfo.factors && vitalSignInfo.factors.length > 0 && (
 						<div className="bg-white rounded-lg border border-gray-200 p-4">
 							<div className="flex items-center gap-3 mb-3">
-								<div className={cn("p-2 rounded-lg", bgColorClass)}>
-									<ShieldCheck className={cn("w-5 h-5", textColorClass)} />
+								<div className="p-2 rounded-lg bg-gray-100">
+									<ShieldCheck className="w-5 h-5 text-gray-600" />
 								</div>
-								<h3 className={cn("text-lg font-bold", textColorClass)}>
+								<h3 className="text-lg font-bold text-gray-900">
 									Affecting Factors
 								</h3>
 							</div>
@@ -215,12 +160,7 @@ const VitalSignInfoModal = ({
 								{vitalSignInfo.factors.map((factor, index) => (
 									<span
 										key={index}
-										className={cn(
-											"px-3 py-1.5 rounded-full text-xs font-medium border",
-											bgColorClass,
-											textColorClass,
-											"border-opacity-30"
-										)}
+										className="px-3 py-1.5 rounded-full text-xs font-medium border bg-gray-100 text-gray-700 border-gray-300"
 									>
 										{factor}
 									</span>
@@ -234,11 +174,7 @@ const VitalSignInfoModal = ({
 				<div className="flex-shrink-0 pt-4 border-t">
 					<button
 						onClick={onClose}
-						className={cn(
-							"w-full py-3 rounded-lg font-semibold text-white transition-colors",
-							colorClass,
-							"hover:opacity-90"
-						)}
+						className="w-full py-3 rounded-lg font-semibold text-white transition-colors bg-primary-main hover:opacity-90"
 					>
 						Close
 					</button>
