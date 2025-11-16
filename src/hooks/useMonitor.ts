@@ -89,44 +89,44 @@ const useMonitor = (
 
 	const onFinalResults = useCallback((vitalSignsResults: VitalSignsResults) => {
 		// Log the raw input object first (before any type assumptions)
-		console.log('🔍 Raw vitalSignsResults object (runtime structure):', vitalSignsResults);
-		console.log('🔍 Raw vitalSignsResults type:', typeof vitalSignsResults);
-		console.log('🔍 Raw vitalSignsResults keys:', Object.keys(vitalSignsResults));
+		// console.log('🔍 Raw vitalSignsResults object (runtime structure):', vitalSignsResults);
+		// console.log('🔍 Raw vitalSignsResults type:', typeof vitalSignsResults);
+		// console.log('🔍 Raw vitalSignsResults keys:', Object.keys(vitalSignsResults));
 		
 		// Get the results object directly from runtime (not from types)
 		const rawResults = (vitalSignsResults as any).results;
-		console.log('🔍 Raw results object:', rawResults);
-		console.log('🔍 Raw results type:', typeof rawResults);
+		// console.log('🔍 Raw results object:', rawResults);
+		// console.log('🔍 Raw results type:', typeof rawResults);
 		
 		// Get all keys dynamically from the actual runtime object
 		// Use both Object.keys() and Object.getOwnPropertyNames() to catch all properties
 		const allKeys = Object.keys(rawResults || {});
 		const allPropertyNames = Object.getOwnPropertyNames(rawResults || {});
 		
-		console.log('📊 Final results received with', allKeys.length, 'vital signs (enumerable keys)');
-		console.log('🔑 All enumerable keys:', allKeys);
-		console.log('🔑 All property names (including non-enumerable):', allPropertyNames);
+		// console.log('📊 Final results received with', allKeys.length, 'vital signs (enumerable keys)');
+		// console.log('🔑 All enumerable keys:', allKeys);
+		// console.log('🔑 All property names (including non-enumerable):', allPropertyNames);
 		
 		// Print all vital sign keys and values for debugging
-		console.log('📋 Complete vital signs structure (from runtime):');
+		// console.log('📋 Complete vital signs structure (from runtime):');
 		if (rawResults) {
 			for (const key of allKeys) {
 				const vitalSign = rawResults[key];
 				const formattedValue = Array.isArray(vitalSign?.value)
 					? `(${vitalSign.value.length} items)`
 					: vitalSign?.value?.toString() ?? 'null';
-				console.log(`  - ${key}: ${formattedValue}`, vitalSign);
+				// console.log(`  - ${key}: ${formattedValue}`, vitalSign);
 			}
 		}
 		
 		// Also log as a clean object for easier inspection
-		console.log('📦 All vital signs as object (runtime):', rawResults);
+		// console.log('📦 All vital signs as object (runtime):', rawResults);
 		
-		// Log as formatted JSON for easy copy-paste (shows actual runtime structure)
-		console.log('📄 All vital signs as JSON (runtime):', JSON.stringify(rawResults, null, 2));
+		// // Log as formatted JSON for easy copy-paste (shows actual runtime structure)
+		// console.log('📄 All vital signs as JSON (runtime):', JSON.stringify(rawResults, null, 2));
 		
-		// Log the entire vitalSignsResults structure
-		console.log('📄 Complete vitalSignsResults as JSON:', JSON.stringify(vitalSignsResults, null, 2));
+		// // Log the entire vitalSignsResults structure
+		// console.log('📄 Complete vitalSignsResults as JSON:', JSON.stringify(vitalSignsResults, null, 2));
 		
 		setVitalSigns(null);
 		updateVitalSigns(vitalSignsResults.results);
