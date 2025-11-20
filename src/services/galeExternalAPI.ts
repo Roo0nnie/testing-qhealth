@@ -36,23 +36,7 @@ function getGaleAPIConfig(): GaleAPIConfig | null {
 	const enabled = process.env.GALE_API_ENABLED !== "false"
 
 	if (!baseURL || !apiToken) {
-		// console.warn("⚠️ GALE API configuration missing. GALE API calls will be disabled.", {
-		// 	hasBaseURL: !!baseURL,
-		// 	hasapiToken: !!apiToken,
-		// 	baseURL: baseURL || "MISSING",
-		// 	apiTokenLength: apiToken?.length || 0
-		// })
-		
-		// TEMPORARY FALLBACK for development/testing
-		// Remove this once env vars are working properly
-		// console.log("🔄 Using hardcoded fallback configuration (DEVELOPMENT ONLY)")
-		return {
-			baseURL: "https://dev-external-api-gale.mangobeach-5e679f1c.southeastasia.azurecontainerapps.io",
-			apiToken: "4ceLQ2rfOn5YSZLYzdpn0hj5PRGV2y02tPYdsJaq_lfftV2yIUMzBae-_wswvcLITDngb9Rxhm1MEUA2WeYUSQegFE_p1aJkghMSpEWDxbGZFEUxw1sD0Eal",
-			systemName: "QHealth System",
-			publisher: "QHealth",
-			enabled: true,
-		}
+		return null;
 	}
 
 	const config = {
