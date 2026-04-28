@@ -1,6 +1,6 @@
 {
-	"name": "@biosensesignal/sample-app",
-	"version": "5.11.1-1",
+	"name": "qhealth-insight-genie-app",
+	"version": "1.0.0",
 	"scripts": {
 		"dev": "webpack serve",
 		"build": "webpack --mode=production",
@@ -9,7 +9,6 @@
 		"format:check": "prettier --check ."
 	},
 	"dependencies": {
-		"@biosensesignal/web-sdk": "file:./biosensesignal-web-sdk-v5.11.1-1.tgz",
 		"@radix-ui/react-dialog": "^1.1.15",
 		"ansi-regex": "^6.2.2",
 		"class-variance-authority": "^0.7.1",
@@ -45,7 +44,6 @@
 		"@vercel/node": "^3.0.0",
 		"ansi-html-community": "^0.0.8",
 		"autoprefixer": "^10.4.21",
-		"copy-webpack-plugin": "^7.0.0",
 		"cross-env": "^7.0.2",
 		"crypto-browserify": "^3.12.0",
 		"css-loader": "^7.1.2",

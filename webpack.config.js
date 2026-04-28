@@ -2,7 +2,6 @@ const path = require("path")
 const webpack = require("webpack")
 const fs = require("fs")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
-const CopyPlugin = require("copy-webpack-plugin")
 const Dotenv = require("dotenv-webpack")
 
 const paths = {
@@ -19,15 +18,27 @@ function common() {
 	// Load environment variables from .env file
 	require("dotenv").config()
 
-	// Read LICENSE_KEY from .env file directly as fallback
-	let licenseKey = process.env.LICENSE_KEY
-	if (!licenseKey) {
+	// Read Insight-Genie environment variables from .env file
+	let insightGenieBaseURL = process.env.INSIGHT_GENIE_BASE_URL
+	let insightGenieApiKey = process.env.INSIGHT_GENIE_API_KEY
+	let insightGenieApiSecret = process.env.INSIGHT_GENIE_API_SECRET
+
+	// Fallback: read from .env file directly if not in process.env
+	if (!insightGenieBaseURL || !insightGenieApiKey || !insightGenieApiSecret) {
 		try {
 			const envPath = path.resolve(__dirname, ".env")
 			const envFile = fs.readFileSync(envPath, "utf8")
-			const match = envFile.match(/^LICENSE_KEY=(.+)$/m)
-			if (match) {
-				licenseKey = match[1].trim()
+			if (!insightGenieBaseURL) {
+				const match = envFile.match(/^INSIGHT_GENIE_BASE_URL=(.+)$/m)
+				if (match) insightGenieBaseURL = match[1].trim()
+			}
+			if (!insightGenieApiKey) {
+				const match = envFile.match(/^INSIGHT_GENIE_API_KEY=(.+)$/m)
+				if (match) insightGenieApiKey = match[1].trim()
+			}
+			if (!insightGenieApiSecret) {
+				const match = envFile.match(/^INSIGHT_GENIE_API_SECRET=(.+)$/m)
+				if (match) insightGenieApiSecret = match[1].trim()
 			}
 		} catch (error) {}
 	}
@@ -71,13 +82,6 @@ function common() {
 		} catch (error) {}
 	}
 
-	// Debug: Log the license key status (masked for security)
-	if (licenseKey) {
-		const maskedKey =
-			licenseKey.substring(0, 6) + "..." + licenseKey.substring(licenseKey.length - 6)
-	} else {
-	}
-
 	return {
 		mode: isProduction ? "production" : "development",
 		devtool: isProduction ? "source-map" : "cheap-module-source-map",
@@ -95,14 +99,21 @@ function common() {
 							hot: true,
 							port: 8001,
 							https: true,
-							host: "0.0.0.0",
-							useLocalIp: true,
-							historyApiFallback: true,
-							contentBase: false,
-							headers: {
-								"Cross-Origin-Opener-Policy": "same-origin",
-								"Cross-Origin-Embedder-Policy": "require-corp",
+							host: "10.10.0.5",
+							useLocalIp: false,
+							disableHostCheck: true,
+							publicPath: "/",
+							index: "index.html",
+							historyApiFallback: {
+								index: "/index.html",
+								disableDotRule: true,
+								rewrites: [
+									{ from: /^\/$/, to: "/index.html" },
+									{ from: /./, to: "/index.html" },
+								],
 							},
+							contentBase: path.resolve(__dirname, "dist"),
+							watchContentBase: false,
 						},
 					}),
 		target: "web",
@@ -175,7 +186,9 @@ function common() {
 				systemvars: true,
 			}),
 			new webpack.DefinePlugin({
-				"process.env.LICENSE_KEY": JSON.stringify(licenseKey || ""),
+				"process.env.INSIGHT_GENIE_BASE_URL": JSON.stringify(insightGenieBaseURL || ""),
+				"process.env.INSIGHT_GENIE_API_KEY": JSON.stringify(insightGenieApiKey || ""),
+				"process.env.INSIGHT_GENIE_API_SECRET": JSON.stringify(insightGenieApiSecret || ""),
 				"process.env.GALE_API_BASE_URL": JSON.stringify(galeApiBaseURL || ""),
 				"process.env.GALE_API_KEY": JSON.stringify(galeApiKey || ""),
 				"process.env.GALE_SCAN_SOURCE_SYSTEM_NAME": JSON.stringify(galeSystemName || "QHealth System"),
@@ -189,17 +202,6 @@ function common() {
 				excludeChunks: ["a", "a.worker"],
 				// Prevent preloading of SDK worker files that may not be used
 				scriptLoading: "defer",
-			}),
-			new CopyPlugin({
-				patterns: [
-					{
-						from: path.resolve(paths.node_modules, "@biosensesignal/web-sdk/dist"),
-						to: path.resolve(paths.build),
-						globOptions: {
-							ignore: ["**/main.*"],
-						},
-					},
-				],
 			}),
 		],
 	}
