@@ -47,14 +47,14 @@ function getGaleAPIConfig(): GaleAPIConfig | null {
 		enabled,
 	}
 
-	// console.log("✅ GALE API Configuration Loaded:", {
-	// 	baseURL: config.baseURL,
-	// 	hasapiToken: !!config.apiToken,
-	// 	apiTokenLength: config.apiToken.length,
-	// 	systemName: config.systemName,
-	// 	publisher: config.publisher,
-	// 	enabled: config.enabled,
-	// })
+	console.log("✅ GALE API Configuration Loaded:", {
+		baseURL: config.baseURL,
+		hasapiToken: !!config.apiToken,
+		apiTokenLength: config.apiToken.length,
+		systemName: config.systemName,
+		publisher: config.publisher,
+		enabled: config.enabled,
+	})
 
 	return config
 }
@@ -398,12 +398,20 @@ export async function sendResultsToGaleAPI(
 		}
 
 		// Transform vital signs to GALE format
-		const scanResult = transformVitalSignsToGaleFormat(results.vitalSigns)
+		const scanResultWithNulls = transformVitalSignsToGaleFormat(results.vitalSigns)
 
-		// Validate that scan_result has at least one non-null value
-		const hasAnyValue = Object.values(scanResult).some(value => value !== null)
-		if (!hasAnyValue) {
-		
+		// Strip null/undefined fields so only fields the upstream provider returned
+		// reach the GALE backend. Insight-Genie returns a smaller subset than the
+		// previous SDK; sending nulls would create noise in the persisted record.
+		const scanResult: Record<string, any> = {}
+		Object.entries(scanResultWithNulls).forEach(([key, value]) => {
+			if (value !== null && value !== undefined) {
+				scanResult[key] = value
+			}
+		})
+
+		// Validate that scan_result has at least one value
+		if (Object.keys(scanResult).length === 0) {
 			return { success: false, error: "No vital signs data available to send" }
 		}
 
@@ -483,6 +491,7 @@ export async function sendResultsToGaleAPI(
 
 		// Log the complete request format that was successfully sent
 		// console.log("📤 GALE API Request Format (Successfully Sent):", JSON.stringify(payload, null, 2))
+		console.log("✅ Successfully sent results to GALE API")
 
 		// console.log("✅ Successfully sent results to GALE API", {
 		// 	sessionId: results.sessionId,
@@ -493,6 +502,7 @@ export async function sendResultsToGaleAPI(
 		return { success: true }
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Unknown error"
+		console.error("❌ Failed to send results to GALE API:", errorMessage)
 		// console.error("❌ Failed to send results to GALE API:", {
 		// 	error: errorMessage,
 		// 	sessionId: results.sessionId,

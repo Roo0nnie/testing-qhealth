@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { isMobile, isTablet } from "@biosensesignal/web-sdk"
 import UAParser from "ua-parser-js"
 
 interface DeviceDetection {
@@ -8,63 +7,37 @@ interface DeviceDetection {
 	isTablet: boolean
 }
 
-/**
- * Enhanced device detection hook that combines multiple detection methods
- * for reliable mobile vs desktop detection
- */
+function detect(): DeviceDetection {
+	const parser = new UAParser(navigator.userAgent)
+	const device = parser.getDevice()
+	const os = parser.getOS()
+	const uaMobile = device.type === "mobile"
+	const uaTablet = device.type === "tablet"
+	const osLooksMobile =
+		os?.name === "Android" ||
+		os?.name === "iOS" ||
+		os?.name === "iPadOS" ||
+		os?.name === "Windows Phone"
+
+	const screenWidth = window.innerWidth
+	const isSmallScreen = screenWidth < 768
+
+	const detectedTablet = uaTablet
+	const detectedMobile = (uaMobile || osLooksMobile) && !uaTablet
+	const detectedDesktop = !detectedMobile && !detectedTablet && !isSmallScreen
+
+	return {
+		isMobile: detectedMobile,
+		isDesktop: detectedDesktop,
+		isTablet: detectedTablet,
+	}
+}
+
 const useDeviceDetection = (): DeviceDetection => {
-	const [deviceDetection, setDeviceDetection] = useState<DeviceDetection>(() => {
-		// Initial detection
-		const parser = new UAParser(navigator.userAgent)
-		const device = parser.getDevice()
-		const uaMobile = device.type === "mobile"
-		const uaTablet = device.type === "tablet"
-
-		// SDK detection
-		const sdkMobile = isMobile()
-		const sdkTablet = isTablet()
-
-		// Screen size check (fallback)
-		const screenWidth = window.innerWidth
-		const isSmallScreen = screenWidth < 768
-
-		// Combined logic: prioritize SDK detection, then UA parser, then screen size
-		const detectedMobile = sdkMobile || (uaMobile && !uaTablet)
-		const detectedTablet = sdkTablet || uaTablet
-		const detectedDesktop = !detectedMobile && !detectedTablet && !isSmallScreen
-
-		return {
-			isMobile: detectedMobile,
-			isDesktop: detectedDesktop,
-			isTablet: detectedTablet,
-		}
-	})
+	const [deviceDetection, setDeviceDetection] = useState<DeviceDetection>(() => detect())
 
 	useEffect(() => {
-		// Re-check on window resize (for responsive testing)
-		const handleResize = () => {
-			const parser = new UAParser(navigator.userAgent)
-			const device = parser.getDevice()
-			const uaMobile = device.type === "mobile"
-			const uaTablet = device.type === "tablet"
-
-			const sdkMobile = isMobile()
-			const sdkTablet = isTablet()
-
-			const screenWidth = window.innerWidth
-			const isSmallScreen = screenWidth < 768
-
-			const detectedMobile = sdkMobile || (uaMobile && !uaTablet)
-			const detectedTablet = sdkTablet || uaTablet
-			const detectedDesktop = !detectedMobile && !detectedTablet && !isSmallScreen
-
-			setDeviceDetection({
-				isMobile: detectedMobile,
-				isDesktop: detectedDesktop,
-				isTablet: detectedTablet,
-			})
-		}
-
+		const handleResize = () => setDeviceDetection(detect())
 		window.addEventListener("resize", handleResize)
 		return () => window.removeEventListener("resize", handleResize)
 	}, [])
