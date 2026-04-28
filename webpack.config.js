@@ -8,7 +8,7 @@ const paths = {
 	src: path.resolve(__dirname, "src"),
 	build: path.resolve(__dirname, "dist"),
 	html: path.resolve(__dirname, "src/index.html"),
-	icon: path.resolve(__dirname, "src/favicon.ico"),
+	icon: path.resolve(__dirname, "src/assets/gaia.svg"),
 	node_modules: path.resolve(__dirname, "node_modules"),
 }
 
