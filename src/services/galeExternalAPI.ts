@@ -376,11 +376,6 @@ function transformVitalSignsToGaleFormat(vitalSigns: VitalSigns): Record<string,
 	return scanResult
 }
 
-/**
- * Send measurement results to GALE External API
- * @param results - Measurement results containing vital signs
- * @returns Promise resolving to success status
- */
 export async function sendResultsToGaleAPI(
 	results: MeasurementResults
 ): Promise<{ success: boolean; error?: string }> {
@@ -420,13 +415,13 @@ export async function sendResultsToGaleAPI(
 			scan_result: scanResult,
 		}
 
-		console.log("📦 Prepared GALE API payload:", {
-			scan_source_id: payload.scan_source_id,
-			scan_source_system_name: payload.scan_source_system_name,
-			scan_source_publisher: payload.scan_source_publisher,
-			scan_result_fields: Object.keys(payload.scan_result).length,
-			scan_result: payload.scan_result
-		})
+		// console.log("📦 Prepared GALE API payload:", {
+		// 	scan_source_id: payload.scan_source_id,
+		// 	scan_source_system_name: payload.scan_source_system_name,
+		// 	scan_source_publisher: payload.scan_source_publisher,
+		// 	scan_result_fields: Object.keys(payload.scan_result).length,
+		// 	scan_result: payload.scan_result
+		// })
 
 		// Validate payload structure
 		if (!payload.scan_source_id || !payload.scan_source_system_name || !payload.scan_source_publisher) {
@@ -464,13 +459,13 @@ export async function sendResultsToGaleAPI(
 
 		if (!response.ok) {
 			const errorText = await response.text().catch(() => "Unknown error")
-			console.error("❌ GALE API request failed:", {
-				status: response.status,
-				statusText: response.statusText,
-				error: errorText,
-				sessionId: results.sessionId,
-				endpoint,
-			})
+			// console.error("❌ GALE API request failed:", {
+			// 	status: response.status,
+			// 	statusText: response.statusText,
+			// 	error: errorText,
+			// 	sessionId: results.sessionId,
+			// 	endpoint,
+			// })
 			throw new Error(`GALE API request failed: ${response.status} ${response.statusText} - ${errorText}`)
 		}
 
