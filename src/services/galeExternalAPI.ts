@@ -493,13 +493,13 @@ export async function sendResultsToGaleAPI(
 		return { success: true }
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Unknown error"
-		// console.error("❌ Failed to send results to GALE API:", {
-		// 	error: errorMessage,
-		// 	sessionId: results.sessionId,
-		// 	timestamp: results.timestamp,
-		// 	fullError: error,
-		// 	stack: error instanceof Error ? error.stack : undefined,
-		// })
+		console.error("❌ Failed to send results to GALE API:", {
+			error: errorMessage,
+			sessionId: results.sessionId,
+			timestamp: results.timestamp,
+			fullError: error,
+			stack: error instanceof Error ? error.stack : undefined,
+		})
 
 		// Don't throw - fail silently to not block user experience
 		return { success: false, error: errorMessage }
