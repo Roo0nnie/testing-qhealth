@@ -82,6 +82,13 @@ function common() {
 		} catch (error) {}
 	}
 
+	// Dev server bind/listen options (development only); override via .env
+	const devServerPort = parseInt(process.env.WEBPACK_DEV_SERVER_PORT || "8001", 10)
+	const devServerHost = process.env.WEBPACK_DEV_SERVER_HOST || "10.10.0.5"
+	const devServerHttps = process.env.WEBPACK_DEV_SERVER_HTTPS !== "false"
+	const devServerUseLocalIp = process.env.WEBPACK_DEV_SERVER_USE_LOCAL_IP === "true"
+	const devServerDisableHostCheck = process.env.WEBPACK_DEV_SERVER_DISABLE_HOST_CHECK !== "false"
+
 	return {
 		mode: isProduction ? "production" : "development",
 		devtool: isProduction ? "source-map" : "cheap-module-source-map",
@@ -97,11 +104,11 @@ function common() {
 				: {
 						devServer: {
 							hot: true,
-							port: 8001,
-							https: true,
-							host: "10.10.0.5",
-							useLocalIp: false,
-							disableHostCheck: true,
+							port: devServerPort,
+							https: devServerHttps,
+							host: devServerHost,
+							useLocalIp: devServerUseLocalIp,
+							disableHostCheck: devServerDisableHostCheck,
 							publicPath: "/",
 							index: "index.html",
 							historyApiFallback: {
