@@ -65,6 +65,7 @@ function common(argv = {}) {
 		"WEBPACK_DEV_SERVER_DISABLE_HOST_CHECK",
 		true
 	)
+	const devServerPublicUrl = readEnv("WEBPACK_DEV_SERVER_PUBLIC_URL")
 
 	return {
 		mode,
@@ -85,6 +86,14 @@ function common(argv = {}) {
 							host: devServerUseLocalIp ? "local-ipv4" : devServerHost,
 							server: devServerHttps ? "https" : "http",
 							allowedHosts: devServerDisableHostCheck ? "all" : "auto",
+							...(devServerPublicUrl
+								? {
+										client: {
+											webSocketURL: devServerPublicUrl,
+										},
+										webSocketServer: "ws",
+									}
+								: {}),
 							devMiddleware: {
 								index: "index.html",
 								publicPath: "/",
