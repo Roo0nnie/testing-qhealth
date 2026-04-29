@@ -2,7 +2,7 @@ const path = require("path")
 const webpack = require("webpack")
 const fs = require("fs")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
-const Dotenv = require("dotenv-webpack")
+const dotenv = require("dotenv")
 
 const paths = {
 	src: path.resolve(__dirname, "src"),
@@ -12,85 +12,62 @@ const paths = {
 	node_modules: path.resolve(__dirname, "node_modules"),
 }
 
-function common() {
-	const isProduction = process.env.NODE_ENV === "production"
+function loadEnvFile() {
+	const envPath = path.resolve(__dirname, ".env")
 
-	// Load environment variables from .env file
-	require("dotenv").config()
-
-	// Read Insight-Genie environment variables from .env file
-	let insightGenieBaseURL = process.env.INSIGHT_GENIE_BASE_URL
-	let insightGenieApiKey = process.env.INSIGHT_GENIE_API_KEY
-	let insightGenieApiSecret = process.env.INSIGHT_GENIE_API_SECRET
-
-	// Fallback: read from .env file directly if not in process.env
-	if (!insightGenieBaseURL || !insightGenieApiKey || !insightGenieApiSecret) {
-		try {
-			const envPath = path.resolve(__dirname, ".env")
-			const envFile = fs.readFileSync(envPath, "utf8")
-			if (!insightGenieBaseURL) {
-				const match = envFile.match(/^INSIGHT_GENIE_BASE_URL=(.+)$/m)
-				if (match) insightGenieBaseURL = match[1].trim()
-			}
-			if (!insightGenieApiKey) {
-				const match = envFile.match(/^INSIGHT_GENIE_API_KEY=(.+)$/m)
-				if (match) insightGenieApiKey = match[1].trim()
-			}
-			if (!insightGenieApiSecret) {
-				const match = envFile.match(/^INSIGHT_GENIE_API_SECRET=(.+)$/m)
-				if (match) insightGenieApiSecret = match[1].trim()
-			}
-		} catch (error) {}
+	try {
+		return dotenv.parse(fs.readFileSync(envPath))
+	} catch (error) {
+		return {}
 	}
+}
 
-	// Read GALE API environment variables from .env file
-	let galeApiBaseURL = process.env.GALE_API_BASE_URL
-	let galeApiKey = process.env.GALE_API_KEY
-	let galeSystemName = process.env.GALE_SCAN_SOURCE_SYSTEM_NAME || "QHealth System"
-	let galePublisher = process.env.GALE_SCAN_SOURCE_PUBLISHER || "QHealth"
-	let galeApiEnabled = process.env.GALE_API_ENABLED !== "false" // Default to true if not set
-
-	// Fallback: read from .env file directly if not in process.env
-	if (!galeApiBaseURL || !galeApiKey) {
-		try {
-			const envPath = path.resolve(__dirname, ".env")
-			const envFile = fs.readFileSync(envPath, "utf8")
-			if (!galeApiBaseURL) {
-				const match = envFile.match(/^GALE_API_BASE_URL=(.+)$/m)
-				if (match) {
-					galeApiBaseURL = match[1].trim()
-				}
-			}
-			if (!galeApiKey) {
-				const match = envFile.match(/^GALE_API_KEY=(.+)$/m)
-				if (match) {
-					galeApiKey = match[1].trim()
-				}
-			}
-			const systemNameMatch = envFile.match(/^GALE_SCAN_SOURCE_SYSTEM_NAME=(.+)$/m)
-			if (systemNameMatch) {
-				galeSystemName = systemNameMatch[1].trim()
-			}
-			const publisherMatch = envFile.match(/^GALE_SCAN_SOURCE_PUBLISHER=(.+)$/m)
-			if (publisherMatch) {
-				galePublisher = publisherMatch[1].trim()
-			}
-			const enabledMatch = envFile.match(/^GALE_API_ENABLED=(.+)$/m)
-			if (enabledMatch) {
-				galeApiEnabled = enabledMatch[1].trim() !== "false"
-			}
-		} catch (error) {}
+function createEnvReader(envFile) {
+	return function readEnv(key, fallback = "") {
+		const value = process.env[key] ?? envFile[key] ?? fallback
+		return typeof value === "string" ? value.trim() : value
 	}
+}
+
+function readEnvBool(readEnv, key, fallback) {
+	const value = readEnv(key, fallback ? "true" : "false")
+	return String(value).toLowerCase() !== "false"
+}
+
+function readEnvPort(readEnv, key, fallback) {
+	const value = Number.parseInt(readEnv(key, String(fallback)), 10)
+	return Number.isNaN(value) ? fallback : value
+}
+
+function common(argv = {}) {
+	const mode = argv.mode === "production" ? "production" : "development"
+	const isProduction = mode === "production"
+	const envFile = loadEnvFile()
+	const readEnv = createEnvReader(envFile)
+
+	// Read only the client-safe variables that app code references.
+	const insightGenieBaseURL = readEnv("INSIGHT_GENIE_BASE_URL")
+	const insightGenieApiKey = readEnv("INSIGHT_GENIE_API_KEY")
+	const insightGenieApiSecret = readEnv("INSIGHT_GENIE_API_SECRET")
+	const galeApiBaseURL = readEnv("GALE_API_BASE_URL")
+	const galeApiKey = readEnv("GALE_API_KEY")
+	const galeSystemName = readEnv("GALE_SCAN_SOURCE_SYSTEM_NAME", "QHealth System")
+	const galePublisher = readEnv("GALE_SCAN_SOURCE_PUBLISHER", "QHealth")
+	const galeApiEnabled = readEnvBool(readEnv, "GALE_API_ENABLED", true)
 
 	// Dev server bind/listen options (development only); override via .env
-	const devServerPort = parseInt(process.env.WEBPACK_DEV_SERVER_PORT || "8001", 10)
-	const devServerHost = process.env.WEBPACK_DEV_SERVER_HOST || "10.10.0.5"
-	const devServerHttps = process.env.WEBPACK_DEV_SERVER_HTTPS !== "false"
-	const devServerUseLocalIp = process.env.WEBPACK_DEV_SERVER_USE_LOCAL_IP === "true"
-	const devServerDisableHostCheck = process.env.WEBPACK_DEV_SERVER_DISABLE_HOST_CHECK !== "false"
+	const devServerPort = readEnvPort(readEnv, "WEBPACK_DEV_SERVER_PORT", 8001)
+	const devServerHost = readEnv("WEBPACK_DEV_SERVER_HOST", "10.10.0.5")
+	const devServerHttps = readEnvBool(readEnv, "WEBPACK_DEV_SERVER_HTTPS", true)
+	const devServerUseLocalIp = readEnv("WEBPACK_DEV_SERVER_USE_LOCAL_IP") === "true"
+	const devServerDisableHostCheck = readEnvBool(
+		readEnv,
+		"WEBPACK_DEV_SERVER_DISABLE_HOST_CHECK",
+		true
+	)
 
 	return {
-		mode: isProduction ? "production" : "development",
+		mode,
 		devtool: isProduction ? "source-map" : "cheap-module-source-map",
 		entry: path.resolve(paths.src, "index.tsx"),
 		output: {
@@ -105,12 +82,13 @@ function common() {
 						devServer: {
 							hot: true,
 							port: devServerPort,
-							https: devServerHttps,
-							host: devServerHost,
-							useLocalIp: devServerUseLocalIp,
-							disableHostCheck: devServerDisableHostCheck,
-							publicPath: "/",
-							index: "index.html",
+							host: devServerUseLocalIp ? "local-ipv4" : devServerHost,
+							server: devServerHttps ? "https" : "http",
+							allowedHosts: devServerDisableHostCheck ? "all" : "auto",
+							devMiddleware: {
+								index: "index.html",
+								publicPath: "/",
+							},
 							historyApiFallback: {
 								index: "/index.html",
 								disableDotRule: true,
@@ -119,8 +97,10 @@ function common() {
 									{ from: /./, to: "/index.html" },
 								],
 							},
-							contentBase: path.resolve(__dirname, "dist"),
-							watchContentBase: false,
+							static: {
+								directory: paths.build,
+								watch: false,
+							},
 						},
 					}),
 		target: "web",
@@ -186,12 +166,14 @@ function common() {
 				},
 			],
 		},
+		performance: isProduction
+			? {
+					hints: "warning",
+					maxAssetSize: 600 * 1024,
+					maxEntrypointSize: 600 * 1024,
+				}
+			: false,
 		plugins: [
-			new Dotenv({
-				path: path.resolve(__dirname, ".env"),
-				safe: false,
-				systemvars: true,
-			}),
 			new webpack.DefinePlugin({
 				"process.env.INSIGHT_GENIE_BASE_URL": JSON.stringify(insightGenieBaseURL || ""),
 				"process.env.INSIGHT_GENIE_API_KEY": JSON.stringify(insightGenieApiKey || ""),
@@ -214,4 +196,4 @@ function common() {
 	}
 }
 
-module.exports = () => common()
+module.exports = (_, argv) => common(argv)
