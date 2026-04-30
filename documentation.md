@@ -325,7 +325,7 @@ flowchart TD
 | `WEBPACK_DEV_SERVER_HTTPS` | — | added (dev) | default `true` |
 | `WEBPACK_DEV_SERVER_USE_LOCAL_IP` | — | added (dev) | default `false` |
 | `WEBPACK_DEV_SERVER_DISABLE_HOST_CHECK` | — | added (dev) | default `true` |
-| `WEBPACK_DEV_SERVER_PUBLIC_URL` | — | added (dev) | Set when reaching the dev server through a public/tunneled domain so the HMR WebSocket connects through the correct origin (e.g. `wss://qhealth-webbased.quanbyit.com/ws`) |
+| `WEBPACK_DEV_SERVER_PUBLIC_URL` | — | added (dev) | Optional override for the HMR WebSocket URL when reaching the dev server through a public/tunneled domain or reverse proxy (e.g. `wss://qhealth-webbased.quanbyit.com/ws`). Leave unset for normal LAN/localhost. |
 
 ---
 

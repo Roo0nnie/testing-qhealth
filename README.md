@@ -1,4 +1,4 @@
-﻿# QHealth (Insight-Genie)
+# QHealth (Insight-Genie)
 
 React web app for **camera-based health scans** using the [Insight-Genie](https://insightgenie.ai) API. The scan runs inside an embedded Insight-Genie iframe; results are mapped to vitals, shown in the UI, and can be forwarded to a **GALE** backend when configured.
 
@@ -49,6 +49,11 @@ Accept the browser warning for the self-signed certificate.
 
 If port `8001` is already in use, stop the old dev server or change
 `WEBPACK_DEV_SERVER_PORT` in `.env`.
+
+If you access the dev server through a **tunnel / public domain** (e.g.
+`https://qhealth-webbased.quanbyit.com/`), keep `WEBPACK_DEV_SERVER_PUBLIC_URL`
+unset unless you need to force the HMR WebSocket to a specific URL/path (for
+reverse proxies that expose the WS endpoint at a custom path like `/ws`).
 
 ### Environment variables
 

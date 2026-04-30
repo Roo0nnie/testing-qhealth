@@ -39,6 +39,34 @@ function readEnvPort(readEnv, key, fallback) {
 	return Number.isNaN(value) ? fallback : value
 }
 
+function normalizeWebSocketURL(value) {
+	if (!value) return null
+
+	// Allow either absolute ws(s):// URL strings or leave the default "auto://..."
+	// in place for local/LAN access. When a tunneled domain is provided without an
+	// explicit port, webpack-dev-server tends to fall back to the dev-server port
+	// (e.g. :8001). For public HTTPS domains we almost always want :443 instead.
+	try {
+		const url = new URL(value)
+		const protocol = url.protocol.replace(":", "") // "ws" | "wss"
+		const pathname = url.pathname && url.pathname !== "/" ? url.pathname : "/ws"
+		const hasExplicitPort = Boolean(url.port)
+
+		if (hasExplicitPort) return value
+
+		const defaultPort = protocol === "wss" ? "443" : "80"
+
+		return {
+			protocol,
+			hostname: url.hostname,
+			port: defaultPort,
+			pathname,
+		}
+	} catch {
+		return value
+	}
+}
+
 function common(argv = {}) {
 	const mode = argv.mode === "production" ? "production" : "development"
 	const isProduction = mode === "production"
@@ -65,7 +93,7 @@ function common(argv = {}) {
 		"WEBPACK_DEV_SERVER_DISABLE_HOST_CHECK",
 		true
 	)
-	const devServerPublicUrl = readEnv("WEBPACK_DEV_SERVER_PUBLIC_URL")
+	const devServerPublicUrl = normalizeWebSocketURL(readEnv("WEBPACK_DEV_SERVER_PUBLIC_URL"))
 
 	return {
 		mode,
@@ -86,14 +114,11 @@ function common(argv = {}) {
 							host: devServerUseLocalIp ? "local-ipv4" : devServerHost,
 							server: devServerHttps ? "https" : "http",
 							allowedHosts: devServerDisableHostCheck ? "all" : "auto",
-							...(devServerPublicUrl
-								? {
-										client: {
-											webSocketURL: devServerPublicUrl,
-										},
-										webSocketServer: "ws",
-									}
-								: {}),
+							client: {
+								webSocketTransport: "ws",
+								webSocketURL: devServerPublicUrl || "auto://0.0.0.0:0/ws",
+							},
+							webSocketServer: "ws",
 							devMiddleware: {
 								index: "index.html",
 								publicPath: "/",
