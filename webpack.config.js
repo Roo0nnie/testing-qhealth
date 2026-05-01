@@ -12,14 +12,63 @@ const paths = {
 	node_modules: path.resolve(__dirname, "node_modules"),
 }
 
-function loadEnvFile() {
-	const envPath = path.resolve(__dirname, ".env")
-
+function parseEnvFile(filePath) {
 	try {
-		return dotenv.parse(fs.readFileSync(envPath))
-	} catch (error) {
+		return dotenv.parse(fs.readFileSync(filePath))
+	} catch {
 		return {}
 	}
+}
+
+function loadEnvFile() {
+	return parseEnvFile(path.resolve(__dirname, ".env"))
+}
+
+/** CRA-style WDS_* vars mapped to the same shape as `WEBPACK_DEV_SERVER_PUBLIC_URL`. */
+function buildWebSocketUrlFromWdsSocketEnv(readEnv, devServerHttps) {
+	const host = readEnv("WDS_SOCKET_HOST")
+	if (!host) return null
+
+	const explicitProtocol = readEnv("WDS_SOCKET_PROTOCOL").toLowerCase()
+	let protocol
+	if (explicitProtocol === "wss" || explicitProtocol === "ws") {
+		protocol = explicitProtocol
+	} else {
+		protocol = devServerHttps ? "wss" : "ws"
+	}
+
+	let pathname = readEnv("WDS_SOCKET_PATH", "/ws")
+	if (!pathname.startsWith("/")) pathname = `/${pathname}`
+
+	const portStr = readEnv("WDS_SOCKET_PORT")
+	if (!portStr) {
+		return normalizeWebSocketURL(`${protocol}://${host}${pathname}`)
+	}
+	const port = Number.parseInt(portStr, 10)
+	if (Number.isNaN(port)) {
+		return normalizeWebSocketURL(`${protocol}://${host}${pathname}`)
+	}
+	const defaultPort = protocol === "wss" ? 443 : 80
+	if (port === defaultPort) {
+		return normalizeWebSocketURL(`${protocol}://${host}${pathname}`)
+	}
+	return normalizeWebSocketURL(`${protocol}://${host}:${port}${pathname}`)
+}
+
+function resolveDevClientWebSocketUrl(readEnv, devServerHttps) {
+	const publicUrl = readEnv("WEBPACK_DEV_SERVER_PUBLIC_URL")
+	if (publicUrl) return normalizeWebSocketURL(publicUrl)
+	const fromWds = buildWebSocketUrlFromWdsSocketEnv(readEnv, devServerHttps)
+	if (fromWds) return fromWds
+	return "auto://0.0.0.0:0/ws"
+}
+
+function resolveAllowedHosts(readEnv, devServerDisableHostCheck) {
+	if (devServerDisableHostCheck) return "all"
+	const raw = readEnv("WEBPACK_DEV_SERVER_ALLOWED_HOSTS")
+	if (!raw) return "auto"
+	const list = raw.split(",").map((s) => s.trim()).filter(Boolean)
+	return list.length ? list : "auto"
 }
 
 function createEnvReader(envFile) {
@@ -93,8 +142,9 @@ function common(argv = {}) {
 		"WEBPACK_DEV_SERVER_DISABLE_HOST_CHECK",
 		true
 	)
-	const devServerPublicUrl = normalizeWebSocketURL(readEnv("WEBPACK_DEV_SERVER_PUBLIC_URL"))
+	const devClientWebSocketURL = resolveDevClientWebSocketUrl(readEnv, devServerHttps)
 	const devServerDisableHmr = readEnvBool(readEnv, "WEBPACK_DEV_SERVER_DISABLE_HMR", false)
+	const devServerAllowedHosts = resolveAllowedHosts(readEnv, devServerDisableHostCheck)
 
 	return {
 		mode,
@@ -115,12 +165,12 @@ function common(argv = {}) {
 							port: devServerPort,
 							host: devServerUseLocalIp ? "local-ipv4" : devServerHost,
 							server: devServerHttps ? "https" : "http",
-							allowedHosts: devServerDisableHostCheck ? "all" : "auto",
+							allowedHosts: devServerAllowedHosts,
 							client: devServerDisableHmr
 								? false
 								: {
 										webSocketTransport: "ws",
-										webSocketURL: devServerPublicUrl || "auto://0.0.0.0:0/ws",
+										webSocketURL: devClientWebSocketURL,
 									},
 							webSocketServer: "ws",
 							devMiddleware: {

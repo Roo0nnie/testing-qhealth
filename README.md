@@ -28,6 +28,9 @@ in your real credentials:
 Copy-Item .env_example .env
 ```
 
+Optional **webpack-dev-server** lines in `.env` (see `.env_example`) apply only when
+you run `pnpm run dev`; `pnpm run build` does not start the dev server.
+
 ### Run locally without build/tooling warnings
 
 Run the commands in this order:
@@ -63,14 +66,20 @@ Pick one approach:
 
 | Approach | What to do |
 | -------- | ---------- |
-| **A. Proxy** | Terminate TLS on nginx (or your tunnel) and forward **both** normal traffic and **`/ws`** to the machine running `pnpm run dev` (HTTPS on `WEBPACK_DEV_SERVER_PORT`, default `8001`), with `Upgrade` / `Connection` headers for WebSockets. See [docs/nginx-webpack-hmr.example.conf](./docs/nginx-webpack-hmr.example.conf). Then set `WEBPACK_DEV_SERVER_PUBLIC_URL=wss://<your-public-host>/ws` in `.env` (no port for standard HTTPS). |
-| **B. Direct dev URL** | Browse the dev server directly, e.g. `https://localhost:8001/` or `https://10.10.0.5:8001/` matching `WEBPACK_DEV_SERVER_HOST`. Leave `WEBPACK_DEV_SERVER_PUBLIC_URL` unset; `auto` HMR matches that origin. |
+| **A. Proxy** | Terminate TLS on nginx (or your tunnel) and forward **both** normal traffic and **`/ws`** to the machine running `pnpm run dev` (HTTPS on `WEBPACK_DEV_SERVER_PORT`, default `8001`), with `Upgrade` / `Connection` headers for WebSockets. See [docs/nginx-webpack-hmr.example.conf](./docs/nginx-webpack-hmr.example.conf). Then set `WEBPACK_DEV_SERVER_PUBLIC_URL=wss://<your-public-host>/ws` in `.env` (no port for standard HTTPS), or set `WDS_SOCKET_HOST`, `WDS_SOCKET_PORT=443`, `WDS_SOCKET_PATH=/ws`, `WDS_SOCKET_PROTOCOL=wss`. |
+| **B. Direct dev URL** | Browse the dev server directly, e.g. `https://localhost:8001/` or `https://10.10.0.5:8001/` matching `WEBPACK_DEV_SERVER_HOST`. Leave `WEBPACK_DEV_SERVER_PUBLIC_URL` and `WDS_SOCKET_*` unset; `auto` HMR matches that origin. |
 | **C. Force HMR to the dev box** | Set `WEBPACK_DEV_SERVER_PUBLIC_URL=wss://<dev-host>:<port>/ws` to a URL that reaches webpack-dev-server (e.g. LAN IP and port `8001`). The browser must trust the dev HTTPS certificate for that host. |
 | **D. No HMR** | Set `WEBPACK_DEV_SERVER_DISABLE_HMR=true` in `.env` (or `hot: false` / `liveReload: false` in `webpack.config.js`) until A, B, or C works. |
 
-Keep `WEBPACK_DEV_SERVER_PUBLIC_URL` **unset** only when you load the app from the
+Keep `WEBPACK_DEV_SERVER_PUBLIC_URL` / `WDS_SOCKET_*` **unset** only when you load the app from the
 **same origin as the webpack dev server** (local or LAN URL as in **B**). If the
 address bar shows a **public hostname**, you need **A** or **C** (or **D**).
+
+### Vercel / production hosting
+
+Vercel runs `pnpm run build` (`webpack --mode=production`) only. **webpack-dev-server never runs** there, so do **not** set `WEBPACK_DEV_SERVER_*` or `WDS_SOCKET_*` in the Vercel environment; they do not fix production and can confuse operators.
+
+In the Vercel dashboard, set only variables your app needs at build time (same names as in `.env_example`): `INSIGHT_GENIE_*`, optional `GALE_*`. If `.env` is not in the repo (it is gitignored), those dashboard values supply `process.env` during the build.
 
 ### Environment variables
 
