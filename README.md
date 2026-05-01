@@ -50,10 +50,27 @@ Accept the browser warning for the self-signed certificate.
 If port `8001` is already in use, stop the old dev server or change
 `WEBPACK_DEV_SERVER_PORT` in `.env`.
 
-If you access the dev server through a **tunnel / public domain** (e.g.
-`https://qhealth-webbased.quanbyit.com/`), keep `WEBPACK_DEV_SERVER_PUBLIC_URL`
-unset unless you need to force the HMR WebSocket to a specific URL/path (for
-reverse proxies that expose the WS endpoint at a custom path like `/ws`).
+#### HMR WebSocket when using a public domain or reverse proxy
+
+If you open the app at a **tunnel or public hostname** (not `https://localhost:8001`
+or your LAN dev URL), the browser loads the page from that host. With
+`WEBPACK_DEV_SERVER_PUBLIC_URL` **unset**, webpack-dev-server’s client uses the
+**same host** for hot reload and connects to `wss://<that-host>/ws`. If nothing
+at the edge accepts that WebSocket (common when only HTTP is proxied), you get
+connection errors in the console and HMR will not work.
+
+Pick one approach:
+
+| Approach | What to do |
+| -------- | ---------- |
+| **A. Proxy** | Terminate TLS on nginx (or your tunnel) and forward **both** normal traffic and **`/ws`** to the machine running `pnpm run dev` (HTTPS on `WEBPACK_DEV_SERVER_PORT`, default `8001`), with `Upgrade` / `Connection` headers for WebSockets. See [docs/nginx-webpack-hmr.example.conf](./docs/nginx-webpack-hmr.example.conf). Then set `WEBPACK_DEV_SERVER_PUBLIC_URL=wss://<your-public-host>/ws` in `.env` (no port for standard HTTPS). |
+| **B. Direct dev URL** | Browse the dev server directly, e.g. `https://localhost:8001/` or `https://10.10.0.5:8001/` matching `WEBPACK_DEV_SERVER_HOST`. Leave `WEBPACK_DEV_SERVER_PUBLIC_URL` unset; `auto` HMR matches that origin. |
+| **C. Force HMR to the dev box** | Set `WEBPACK_DEV_SERVER_PUBLIC_URL=wss://<dev-host>:<port>/ws` to a URL that reaches webpack-dev-server (e.g. LAN IP and port `8001`). The browser must trust the dev HTTPS certificate for that host. |
+| **D. No HMR** | Set `WEBPACK_DEV_SERVER_DISABLE_HMR=true` in `.env` (or `hot: false` / `liveReload: false` in `webpack.config.js`) until A, B, or C works. |
+
+Keep `WEBPACK_DEV_SERVER_PUBLIC_URL` **unset** only when you load the app from the
+**same origin as the webpack dev server** (local or LAN URL as in **B**). If the
+address bar shows a **public hostname**, you need **A** or **C** (or **D**).
 
 ### Environment variables
 
@@ -88,6 +105,7 @@ There is **no** Biosense Signal SDK or separate “license key” field in this 
 ## Documentation
 
 - **[GALE_API_INTEGRATION_GUIDE.md](./GALE_API_INTEGRATION_GUIDE.md)** — embedding the scan URL in third-party apps and receiving results at a GALE endpoint.
+- **[docs/nginx-webpack-hmr.example.conf](./docs/nginx-webpack-hmr.example.conf)** — example nginx reverse proxy for webpack HMR (`/ws`) behind a public hostname.
 
 ## Scripts
 
