@@ -47,14 +47,14 @@ function getGaleAPIConfig(): GaleAPIConfig | null {
 		enabled,
 	}
 
-	console.log("✅ GALE API Configuration Loaded:", {
-		baseURL: config.baseURL,
-		hasapiToken: !!config.apiToken,
-		apiTokenLength: config.apiToken.length,
-		systemName: config.systemName,
-		publisher: config.publisher,
-		enabled: config.enabled,
-	})
+	// console.log("✅ GALE API Configuration Loaded:", {
+	// 	baseURL: config.baseURL,
+	// 	hasapiToken: !!config.apiToken,
+	// 	apiTokenLength: config.apiToken.length,
+	// 	systemName: config.systemName,
+	// 	publisher: config.publisher,
+	// 	enabled: config.enabled,
+	// })
 
 	return config
 }
