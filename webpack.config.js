@@ -94,6 +94,7 @@ function common(argv = {}) {
 		true
 	)
 	const devServerPublicUrl = normalizeWebSocketURL(readEnv("WEBPACK_DEV_SERVER_PUBLIC_URL"))
+	const devServerDisableHmr = readEnvBool(readEnv, "WEBPACK_DEV_SERVER_DISABLE_HMR", false)
 
 	return {
 		mode,
@@ -109,15 +110,18 @@ function common(argv = {}) {
 				? {}
 				: {
 						devServer: {
-							hot: true,
+							hot: !devServerDisableHmr,
+							liveReload: !devServerDisableHmr,
 							port: devServerPort,
 							host: devServerUseLocalIp ? "local-ipv4" : devServerHost,
 							server: devServerHttps ? "https" : "http",
 							allowedHosts: devServerDisableHostCheck ? "all" : "auto",
-							client: {
-								webSocketTransport: "ws",
-								webSocketURL: devServerPublicUrl || "auto://0.0.0.0:0/ws",
-							},
+							client: devServerDisableHmr
+								? false
+								: {
+										webSocketTransport: "ws",
+										webSocketURL: devServerPublicUrl || "auto://0.0.0.0:0/ws",
+									},
 							webSocketServer: "ws",
 							devMiddleware: {
 								index: "index.html",
